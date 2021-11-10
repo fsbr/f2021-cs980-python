@@ -39,7 +39,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 140 
+        self.m = 50 
 
         # i would rather have a project than no project
         self.start = State()
@@ -172,10 +172,11 @@ class BIT_STAR:
         pass
 
     def Sample(self):
+        # add self.m number of valid samples
         self.dbgSampleCount +=1
         i = 0 
         print("self.m", self.m)
-        for i in range(0, self.m):
+        while (i < self.m):
             xRand = random.uniform(self.xMin, self.xMax)
             yRand = random.uniform(self.yMin, self.yMax)
             xIdx = int(np.floor(xRand))
@@ -190,7 +191,6 @@ class BIT_STAR:
             if (tmpG+tmpH) < self.goal.gT: 
                 print("adding states into Xsamples")
                 if self.obs[yIdx][xIdx] == 0:
-                    #if self.obs
                     stateToAdd = State()
                     stateToAdd.x = xRand
                     stateToAdd.y = yRand
@@ -201,7 +201,7 @@ class BIT_STAR:
         #indentation is hard to see when you're fucking coding 9-14 hours a day 
        
     def bestQueueValue(self, queue):
-        print("printing the queue")
+        print("printing the queue" + " " + str(type(queue)))
         print(len(queue))
         if len(queue) == 0:
             return inf
@@ -219,10 +219,13 @@ class BIT_STAR:
         self.dbgExpandVertexCount+=1
         print("queue in expand vertex")
         #print(self.Qv)
+        print("Edge Queue length", len(self.Qe)) 
+        print("Vertex Queue length", len(self.Qe)) 
         # we're interested in the State that we are searching on, not the value its sorted by really
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         print("v in ExpandVertex",v)
+        print("Does v Belong to self.Vold", v in self.Vold)
 
         # i think we clear it each time
         self.Xnear = {}
@@ -236,10 +239,12 @@ class BIT_STAR:
             gHatV = self.calcDist(v, self.start)
             cHat = self.calcDist(v,i)                                   # this number should be changing pers sample/
             hHatX = self.calcDist(i, self.goal)
+            fHat = gHatV + cHat +hHatX
             #print("goal Gt", self.goal.gT)
             print("gHatV", gHatV)
             print("cHat", cHat)
             print("hHatX", hHatX)
+            print("fHat", fHat)
             if gHatV + cHat + hHatX < self.goal.gT:
                 edgeToAdd = Edge()
                 edgeToAdd.source_state = v
@@ -258,8 +263,6 @@ class BIT_STAR:
                 self.QeCount+=1
 
         if v not in self.Vold:                                              # A2.4
-            #print("do some v near and edge queue stuff")
-            #print("i doubt this happens right now")
             print("in self.Vold section")
             self.Vnear = {} 
             for i in self.Vold:                                             # A2.2
@@ -275,11 +278,9 @@ class BIT_STAR:
                 if gHatV + cHat + hHatX < self.goal.gT:
                     edgeToAdd = Edge()
                     edgeToAdd.source_state = v
-                    #i.gT = gHatV + cHat
                     edgeToAdd.target_state = i
                     edgeToAdd.cHat = cHat
                     edgeToAdd.f = gHatV + cHat + hHatX
-                    #print("pushing edge V case")
                     self.QvCount+=1
                     heapq.heappush(self.Qe, (edgeToAdd.f,self.QvCount, edgeToAdd))
         print("EXPAND NEXT VERTEX FINISHED") 
@@ -287,7 +288,7 @@ class BIT_STAR:
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <50:                                             # A1.3
+        while self.tmpWhile <200:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -307,9 +308,13 @@ class BIT_STAR:
                 #print("self.start", self.start)
                 # the line below at least did something
                 #heapq.heappush(self.Qv, (self.start.gT, self.QvCount, self.start))        # A1.8
+                print("before A1.8 length of self.V", len(self.V))
+                print("before A1.8 length of self.Qv", len(self.V))
                 for vertex in self.V:
                     print("pushing every state in v to the vertex queue")
                     heapq.heappush(self.Qv, (vertex.gT, self.QvCount, vertex))        # A1.8
+                print("after A1.8 length of self.V", len(self.V))
+                print("after A1.8 length of self.Qv", len(self.Qv))
                 #print("printing self.Qv in bit star main ", self.Qv)
                 #print(self.Qv)
                 #self.r = len(self.V) + len(self.Xsamples)                   # A1.9
@@ -394,9 +399,12 @@ class BIT_STAR:
                         print("passed check of #A1.16")
                         print("type of Xm", type(Xm))
                         if Xm in self.V:                                        # A1.17 
-                        #if XmInV == True:
                             print("state was in" )
-                            self.E.pop(currentEdge)                             # A1.18
+                            edgeToPop = Edge()
+                            for edge in self.E:
+                                if edge.target_state == Xm:
+                                    self.E.pop(edge)                             # A1.18
+                                    break
                         else:                                                   # A1.19
 
                             print("doing the non member stuff")
@@ -411,7 +419,7 @@ class BIT_STAR:
                             Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
                             heapq.heappush(self.Qv, (Xm.gT,self.QvCount, Xm))   #A1.21
-                        self.E[currentEdge] = currentEdge 
+                        #self.E[currentEdge] = currentEdge 
                         print("EDGE ADDED TO MOTION TREE")
                         print("CHECK EDGE CONTAINS GOAL STATE")
                         if currentEdge.target_state == self.goal:
@@ -434,7 +442,8 @@ class BIT_STAR:
                             print("FINAL tmpCost", tmpCost)
                             if tmpCost < self.c:
                                 self.c = tmpCost
-                        print(self.E)                                           #A1.22
+                        print(self.E)                                           
+                        self.E[currentEdge] = currentEdge                       #A1.22
                         if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
                             heapq.heappop(self.Qe)                              #A1.23
             else:                                                               #A1.24
@@ -449,9 +458,15 @@ class Visualizer:
     def __init__(self):
         print("Visualizer")
 
-    def plotMotionTree(self,V,E,obsMap,yMax, samples):
+    def plotMotionTree(self,V,E,obsMap,yMax, samples, start, goal):
         fig, ax = plt.subplots()
         print("Plotting the Motion Tree")
+        startX = start.x
+        startY = start.y
+        goalX = goal.x
+        goalY = goal.y
+        plt.plot(startX,startY, "go", markersize=10)
+        plt.plot(goalX,goalY, "ro", markersize=10)
         xVec = []
         yVec = []
         for edge in E:
@@ -472,10 +487,6 @@ class Visualizer:
             xSampleVector.append(state.x)
             ySampleVector.append(state.y)
         plt.plot(xSampleVector,ySampleVector, "bo", markersize=2)
-            
-
-        
-
 
         # plotting the obstacles
         countY = 0
@@ -521,11 +532,11 @@ if __name__ == "__main__":
     vertices = open("vertices.txt","w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(23)
+    random.seed(28)
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment69.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment619.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
@@ -550,6 +561,6 @@ if __name__ == "__main__":
         print("y", i.y)
 
     gv = Visualizer()
-    gv.plotMotionTree(V,E,BS.obs, BS.yMax,BS.Xsamples)
+    gv.plotMotionTree(V,E,BS.obs, BS.yMax,BS.Xsamples,BS.start, BS.goal)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
