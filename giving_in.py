@@ -16,6 +16,7 @@ class State:
         self.gT = inf
         self.hHat = inf
         self.gHat = inf
+        self.fHat = inf
         
 
 class Edge:
@@ -39,7 +40,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 50 
+        self.m = 9 
 
         # i would rather have a project than no project
         self.start = State()
@@ -106,6 +107,15 @@ class BIT_STAR:
         print(self.start.y)
         print(self.goal.x)
         print(self.goal.y)
+        self.start.gHat = 0
+        self.start.hHat = self.calcDist(self.start,self.goal)
+        self.start.fHat = self.start.gHat + self.start.hHat
+
+        self.goal.gHat = self.calcDist(self.start, self.goal)
+        self.goal.hHat = 0
+        self.goal.fHat = self.goal.gHat + self.goal.hHat
+        print("ENVIRONMENT READING fHat goal", self.start.fHat)
+        print("ENVIRONMENT READING fHat goal", self.goal.fHat)
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
     
@@ -169,13 +179,42 @@ class BIT_STAR:
         return hit
 
     def Prune(self):
-        pass
+        print("A3.1")
+        for state in list(self.Xsamples):                                               #A3.1
+            print("IN PRUNING")
+            print(state) 
+            if state.fHat > self.c:
+                print("from samples: pruning state of x=" + str(state.x) + " y= " + str(state.y))
+                self.Xsamples.pop(state)  
 
+        print("A3.2")
+        for state in list(self.V):                                                      #A3.2
+            if state.fHat > self.c:
+                print("attempting to prune a useless state from self.V")
+                print("from self.V pruning state of x=" + str(state.x) + " y= " + str(state.y))
+                self.V.pop(state)
+
+        print("A3.3")
+        for edge in list(self.E):                                                       #A3.3
+            if ((edge.source_state.fHat > self.c) or (edge.target_state.fHat > self.c)):
+                print("attempting to prune an edge")
+                self.E.pop(edge)
+
+        print("A3.4")
+        for state in list(self.V):                                                      #A3.4
+            if state.gT == inf:
+                self.Xsamples[state] = state
+                self.V.pop(state)
+
+
+                 
     def Sample(self):
         # add self.m number of valid samples
         self.dbgSampleCount +=1
         i = 0 
+        print("DEBUG OUTPUT FOR def Sample(self):")
         print("self.m", self.m)
+        print("self.c", self.c)
         while (i < self.m):
             xRand = random.uniform(self.xMin, self.xMax)
             yRand = random.uniform(self.yMin, self.yMax)
@@ -186,19 +225,22 @@ class BIT_STAR:
             tmpH = self.calculate_L2(xRand, yRand, self.goal.x, self.goal.y)
 
             print("xrand: " + str(xRand) + " yrand: " + str(yRand))
-            print("tmpG" + str(tmpG) + " tmpH " + str(tmpH) )
+            print("tmpG " + str(tmpG) + " tmpH " + str(tmpH) )
+            print("tmpH + tmpH = ", tmpG+ tmpH)
             print("goal.gT",self.goal.gT)
             if (tmpG+tmpH) < self.goal.gT: 
-                print("adding states into Xsamples")
+                print("adding samples into Xsamples")
                 if self.obs[yIdx][xIdx] == 0:
                     stateToAdd = State()
                     stateToAdd.x = xRand
                     stateToAdd.y = yRand
+                    stateToAdd.gHat = tmpG
+                    stateToAdd.hHat = tmpH
+                    stateToAdd.fHat = tmpG + tmpH
                     self.Xsamples[stateToAdd] = stateToAdd
                     i+=1
             print("length of Xsamples in Samples", len(self.Xsamples))
         return self.Xsamples
-        #indentation is hard to see when you're fucking coding 9-14 hours a day 
        
     def bestQueueValue(self, queue):
         print("printing the queue" + " " + str(type(queue)))
@@ -283,20 +325,21 @@ class BIT_STAR:
                     edgeToAdd.f = gHatV + cHat + hHatX
                     self.QvCount+=1
                     heapq.heappush(self.Qe, (edgeToAdd.f,self.QvCount, edgeToAdd))
+        print("self.c cost ", self.c)
         print("EXPAND NEXT VERTEX FINISHED") 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <200:                                             # A1.3
+        while self.tmpWhile <500:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
             print("Qe Size" + str(len(self.Qe)) + "Qv Size" + str(len(self.Qv)))
             if (len(self.Qe) == 0 and len(self.Qv) == 0):                   # A1.4
                 print("LINE A1.5")
-                #print("prune")                                              # A1.5 
-                #self.Prune()
+                print("prune")                                              # A1.5 
+                self.Prune()
                 Xsamples = self.Sample()                                    # A1.6
                 #print("length of Xsamples", len(Xsamples))
                 self.Vold = self.V                                          # A1.7
@@ -532,7 +575,7 @@ if __name__ == "__main__":
     vertices = open("vertices.txt","w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(28)
+    random.seed(69)
     # input stuff
     #
     BS = BIT_STAR()
