@@ -39,7 +39,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 50 
+        self.m = 140 
 
         # i would rather have a project than no project
         self.start = State()
@@ -66,10 +66,15 @@ class BIT_STAR:
         self.QeCount = 0
         self.QvCount = 0
 
+        # solution cost
+        self.c = inf
+
         # DEBUG PARAMS
         # temporarily run the while loop
         self.tmpWhile = 0
         self.dbgAttemptedEdgeList = []
+        self.dbgSampleCount = 0
+        self.dbgExpandVertexCount = 0
     
     def readEnvironment(self, envFile):
         A = []
@@ -167,11 +172,15 @@ class BIT_STAR:
         pass
 
     def Sample(self):
+        self.dbgSampleCount +=1
         i = 0 
         print("self.m", self.m)
         for i in range(0, self.m):
             xRand = random.uniform(self.xMin, self.xMax)
             yRand = random.uniform(self.yMin, self.yMax)
+            xIdx = int(np.floor(xRand))
+            yIdx = int(np.floor(self.yMax - yRand))
+            # i'm pretty sure its supposed to sample from around where you are in the search 
             tmpG = self.calculate_L2(xRand, yRand, self.start.x, self.start.y)
             tmpH = self.calculate_L2(xRand, yRand, self.goal.x, self.goal.y)
 
@@ -180,11 +189,13 @@ class BIT_STAR:
             print("goal.gT",self.goal.gT)
             if (tmpG+tmpH) < self.goal.gT: 
                 print("adding states into Xsamples")
-                stateToAdd = State()
-                stateToAdd.x = xRand
-                stateToAdd.y = yRand
-                self.Xsamples[stateToAdd] = stateToAdd
-                i+=1
+                if self.obs[yIdx][xIdx] == 0:
+                    #if self.obs
+                    stateToAdd = State()
+                    stateToAdd.x = xRand
+                    stateToAdd.y = yRand
+                    self.Xsamples[stateToAdd] = stateToAdd
+                    i+=1
             print("length of Xsamples in Samples", len(self.Xsamples))
         return self.Xsamples
         #indentation is hard to see when you're fucking coding 9-14 hours a day 
@@ -205,6 +216,7 @@ class BIT_STAR:
             return bestValue 
 
     def ExpandVertex(self):
+        self.dbgExpandVertexCount+=1
         print("queue in expand vertex")
         #print(self.Qv)
         # we're interested in the State that we are searching on, not the value its sorted by really
@@ -275,7 +287,7 @@ class BIT_STAR:
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <17:                                             # A1.3
+        while self.tmpWhile <50:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -380,20 +392,48 @@ class BIT_STAR:
                     print("Xm.gT", Xm.gT)
                     if Vm.gT + realCost < Xm.gT:                                # A1.16
                         print("passed check of #A1.16")
+                        print("type of Xm", type(Xm))
                         if Xm in self.V:                                        # A1.17 
                         #if XmInV == True:
                             print("state was in" )
                             self.E.pop(currentEdge)                             # A1.18
                         else:                                                   # A1.19
+
                             print("doing the non member stuff")
+                            print("Lenght of self.Xsamples before", len(self.Xsamples))
                             self.Xsamples.pop(Xm)                               #A1.20
+                            print("Length of self.Xsamples after", len(self.Xsamples))
+                            print("Length of Vertex Set A1.21 before", len(self.V))
                             self.V[Xm] = Xm                                     #A1.21
-                            print("length of the vertex set", len(self.V))
+                            print("Length of Vertex Set A1.21 after", len(self.V))
+                            print("is Xm in V?", Xm in self.V)
+
                             Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
                             heapq.heappush(self.Qv, (Xm.gT,self.QvCount, Xm))   #A1.21
                         self.E[currentEdge] = currentEdge 
                         print("EDGE ADDED TO MOTION TREE")
+                        print("CHECK EDGE CONTAINS GOAL STATE")
+                        if currentEdge.target_state == self.goal:
+                            print("ADDED EDGE CONTAINS GOAL STATE")
+                            edgeOfInterest = currentEdge
+                            tmpCost =  0
+
+                            print("ENTERING COST TRAVERSAL")
+                            while edgeOfInterest.source_state != self.start:
+                                tmpCost += edgeOfInterest.cHat
+                                print("tmp Cost", tmpCost)
+                                # i dont want to iterate thru the whole tree just to find the edge target_state = edgeOfInterest.source_state  
+                                # but its whats going to finish my project before december 2
+                                for edge in list(self.E.values()):
+                                    if edge.target_state == edgeOfInterest.source_state:
+                                        edgeOfInterest = edge
+                                        break
+                            tmpCost +=edgeOfInterest.cHat
+
+                            print("FINAL tmpCost", tmpCost)
+                            if tmpCost < self.c:
+                                self.c = tmpCost
                         print(self.E)                                           #A1.22
                         if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
                             heapq.heappop(self.Qe)                              #A1.23
@@ -409,7 +449,7 @@ class Visualizer:
     def __init__(self):
         print("Visualizer")
 
-    def plotMotionTree(self,V,E,obsMap,yMax):
+    def plotMotionTree(self,V,E,obsMap,yMax, samples):
         fig, ax = plt.subplots()
         print("Plotting the Motion Tree")
         xVec = []
@@ -419,9 +459,25 @@ class Visualizer:
             xVec.append(edge.target_state.x)
             yVec.append(edge.source_state.y)
             yVec.append(edge.target_state.y)
-        ax.plot(xVec, yVec, "b")
+            ax.plot(xVec, yVec, "m-x")
+            ax.plot(xVec,yVec, "gx")
+            xVec = []
+            yVec = []
         #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
         #ax.add_patch(rect)
+
+        xSampleVector = []
+        ySampleVector = []
+        for state in samples:
+            xSampleVector.append(state.x)
+            ySampleVector.append(state.y)
+        plt.plot(xSampleVector,ySampleVector, "bo", markersize=2)
+            
+
+        
+
+
+        # plotting the obstacles
         countY = 0
         for i in obsMap:
             countX = 0
@@ -494,6 +550,6 @@ if __name__ == "__main__":
         print("y", i.y)
 
     gv = Visualizer()
-    gv.plotMotionTree(V,E,BS.obs, BS.yMax)
+    gv.plotMotionTree(V,E,BS.obs, BS.yMax,BS.Xsamples)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
