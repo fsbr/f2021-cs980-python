@@ -40,7 +40,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 9 
+        self.m = 100 
 
         # i would rather have a project than no project
         self.start = State()
@@ -76,6 +76,7 @@ class BIT_STAR:
         self.dbgAttemptedEdgeList = []
         self.dbgSampleCount = 0
         self.dbgExpandVertexCount = 0
+        self.dbgCollisionCheckCount = 0
     
     def readEnvironment(self, envFile):
         A = []
@@ -127,6 +128,7 @@ class BIT_STAR:
         return self.calculate_L2(x1,y1,x2,y2)
         
     def collisionCheck(self, Vm, Xm):
+        self.dbgCollisionCheckCount += 1
         # returns true if there is a collision
         x1 = Vm.x
         y1 = Vm.y
@@ -211,6 +213,8 @@ class BIT_STAR:
     def Sample(self):
         # add self.m number of valid samples
         self.dbgSampleCount +=1
+
+        # something to break out of the directly connected case
         i = 0 
         print("DEBUG OUTPUT FOR def Sample(self):")
         print("self.m", self.m)
@@ -267,7 +271,7 @@ class BIT_STAR:
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         print("v in ExpandVertex",v)
-        print("Does v Belong to self.Vold", v in self.Vold)
+        print("Does v.x " + str(v.x) + " v.y " + str(v.y) + "Belong to self.Vold", v in self.Vold)
 
         # i think we clear it each time
         self.Xnear = {}
@@ -308,6 +312,8 @@ class BIT_STAR:
             print("in self.Vold section")
             self.Vnear = {} 
             for i in self.Vold:                                             # A2.2
+                print("v.x " + str(v.x) + " v.y " + str(v.y))
+                print("i.x " + str(i.x) + " i.y " + str(i.y))
                 if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
                     self.Vnear[i] = i 
             for i in self.V:
@@ -317,21 +323,26 @@ class BIT_STAR:
                 print("gHatV", gHatV)
                 print("cHat", cHat)
                 print("hHatX", hHatX)
-                if gHatV + cHat + hHatX < self.goal.gT:
+                estimatedCostIsBetter = gHatV + cHat + hHatX <self.goal.gT
+                estCostBetterGivenTree = v.gT + cHat < i.gT
+                
+                if estimatedCostIsBetter and estCostBetterGivenTree:
+                #if (gHatV + cHat + hHatX < self.goal.gT):
                     edgeToAdd = Edge()
                     edgeToAdd.source_state = v
                     edgeToAdd.target_state = i
                     edgeToAdd.cHat = cHat
                     edgeToAdd.f = gHatV + cHat + hHatX
                     self.QvCount+=1
-                    heapq.heappush(self.Qe, (edgeToAdd.f,self.QvCount, edgeToAdd))
+                    if edgeToAdd not in self.E:
+                        heapq.heappush(self.Qe, (edgeToAdd.f,self.QvCount, edgeToAdd))
         print("self.c cost ", self.c)
         print("EXPAND NEXT VERTEX FINISHED") 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <500:                                             # A1.3
+        while self.tmpWhile <50:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -340,17 +351,21 @@ class BIT_STAR:
                 print("LINE A1.5")
                 print("prune")                                              # A1.5 
                 self.Prune()
+
                 Xsamples = self.Sample()                                    # A1.6
                 #print("length of Xsamples", len(Xsamples))
-                self.Vold = self.V                                          # A1.7
+                #self.Vold = self.V                                          # A1.7 (kind of working)
+                self.Vold = self.V.copy()                                          # A1.7
                 print("self.Vold == self.V", self.Vold == self.V)
                 self.QvCount+=1
+
                 #print("self.Qv", self.Qv)
                 #print("self.start.gT", self.start.gT)
                 #print("self.QvCount", self.QvCount)
                 #print("self.start", self.start)
                 # the line below at least did something
                 #heapq.heappush(self.Qv, (self.start.gT, self.QvCount, self.start))        # A1.8
+
                 print("before A1.8 length of self.V", len(self.V))
                 print("before A1.8 length of self.Qv", len(self.V))
                 for vertex in self.V:
@@ -409,6 +424,8 @@ class BIT_STAR:
 
             if Vm.gT + currentEdge.cHat + Xm.hHat < self.goal.gT:                     # A1.14 
                 print("passed check of a1.14")
+                print("Vm.x " +str(Vm.x) + " Vm.y " + str(Vm.y))
+                print("Xm.x " +str(Xm.x) + " Xm.y " + str(Xm.y))
                 gHatVm = self.calcDist(Vm, self.start)  
                 
                 # look into the occupance grid, and if the line formed by Vm->Xm
@@ -458,6 +475,7 @@ class BIT_STAR:
                             self.V[Xm] = Xm                                     #A1.21
                             print("Length of Vertex Set A1.21 after", len(self.V))
                             print("is Xm in V?", Xm in self.V)
+                            print("is Xm in Vold?", Xm in self.Vold)
 
                             Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
@@ -489,6 +507,10 @@ class BIT_STAR:
                         self.E[currentEdge] = currentEdge                       #A1.22
                         if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
                             heapq.heappop(self.Qe)                              #A1.23
+
+                        # stop if the goal and start can be directly connected
+                        if self.E[currentEdge].source_state == self.start and self.E[currentEdge].target_state == self.goal:
+                            break
             else:                                                               #A1.24
                 print("Failed check of #A1.14")
                 self.Qe = []                                                    #A1.25
@@ -575,11 +597,11 @@ if __name__ == "__main__":
     vertices = open("vertices.txt","w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(69)
+    #random.seed(69)
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment619.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
