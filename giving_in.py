@@ -43,7 +43,8 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 10
+        self.m = 15
+        self.nNearest = 10      # must be smaller than m
 
         # i would rather have a project than no project
         self.start = State()
@@ -254,10 +255,11 @@ class BIT_STAR:
     def Radius(self,q):        
         # i have no idea how to do this one
         n = 2
-        A = (1+1/n)**(1/n)
-        B = (2/np.pi)**(1/n)
-        C = (np.log(q)/q)**(1/n)
+        A = np.sqrt((1+1/n))
+        B = np.sqrt((2/np.pi))
+        C = np.sqrt((np.log(q)/q))
         return A*B*C
+
     def Sample(self):
         # add self.m number of valid samples
         self.dbgSampleCount +=1
@@ -397,7 +399,7 @@ class BIT_STAR:
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <10000:                                             # A1.3
+        while self.tmpWhile <5000:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -517,16 +519,19 @@ class BIT_STAR:
                     print("Vm.gT", Vm.gT)
                     print("realCost", realCost)
                     print("Xm.gT", Xm.gT)
+
                     if Vm.gT + realCost < Xm.gT:                                # A1.16
                         print("passed check of #A1.16")
                         print("type of Xm", type(Xm))
                         if Xm in self.V:                                        # A1.17 
                             print("state was in" )
                             edgeToPop = Edge()
-                            for edge in self.E:
+                            for edge in list(self.E):                           # added list and removed break
                                 if edge.target_state == Xm:
-                                    self.E.pop(edge)                             # A1.18
-                                    break
+                                    print(type(edge))
+                                    print("PRUNING EDGES INSIDE ELLIPSE")
+                                    self.E.pop(edge)                             # A1.18 
+                                    #break
                         else:                                                   # A1.19
 
                             print("doing the non member stuff")
