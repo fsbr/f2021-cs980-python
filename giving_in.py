@@ -19,7 +19,7 @@ class State:
         self.gT = inf
         self.hHat = inf
         self.gHat = inf
-        self.fHat = inf
+        self.fHat = inf 
         
 
 class Edge:
@@ -43,7 +43,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 50 
+        self.m = 10
 
         # i would rather have a project than no project
         self.start = State()
@@ -192,9 +192,13 @@ class BIT_STAR:
         for state in list(self.Xsamples):                                               #A3.1
             print("IN PRUNING")
             print(state) 
-            if state.fHat > self.c:
+            print("state.fHat", state.fHat)
+            print("self.c ", self.c)
+            if state.fHat >= self.c:
                 print("from samples: pruning state of x=" + str(state.x) + " y= " + str(state.y))
                 self.Xsamples.pop(state)  
+                print("A3.1 pruned a sample")
+                print("The number of samples we have == ", len(self.Xsamples))
 
         print("A3.2")
         for state in list(self.V):                                                      #A3.2
@@ -202,21 +206,58 @@ class BIT_STAR:
                 print("attempting to prune a useless state from self.V")
                 print("from self.V pruning state of x=" + str(state.x) + " y= " + str(state.y))
                 self.V.pop(state)
+                print("A3.2 pruned a state")
 
         print("A3.3")
         for edge in list(self.E):                                                       #A3.3
-            if ((edge.source_state.fHat > self.c) and (edge.target_state.fHat > self.c)):
-                print("attempting to prune an edge")
-                self.E.pop(edge)
+            print("edge.source_state.fHat", edge.source_state.fHat)  
+            print("edge.target_state.fHat", edge.target_state.fHat)  
+            print("self.c", self.c)  
+            print("edge.target_state.x", edge.target_state.x)
+            print("edge.target_state.y", edge.target_state.y)
+            print("edge.source_state.fHat > self.c", edge.source_state.fHat > self.c)
+            print("edge.target_state.fHat > self.c", edge.target_state.fHat > self.c)
 
+            if ((edge.source_state.fHat > self.c) or (edge.target_state.fHat > self.c)):  # worked wiht fHat
+                print("attempting to prune an edge")
+                print("with target coordinates")
+                print("edge.target_state.x", edge.target_state.x)
+                print("edge.target_state.y", edge.target_state.y)
+
+                # before we pop this edge, we need to make sure that we set its gT == inf in the vertex
+                # IF it is no longer conected in the tree
+                foundInTree = False
+                #foundInTreePred = False
+
+                # pop the edge, then check that we need to update the corresponding vertex
+                self.E.pop(edge)
+                print("A3.3 pruned an edge")
+                for e1 in list(self.E):
+                    if e1.target_state == edge.target_state: 
+                        print("state found as successor")
+                        foundInTree = True
+                if foundInTree == False:
+                    print("state not found as successor")
+                    if edge.target_state in self.V:
+                        print("did we ever actually do this?")
+                        self.V[edge.target_state].gT = inf
+                 
         print("A3.4")
         for state in list(self.V):                                                      #A3.4
             if state.gT == inf:
                 self.Xsamples[state] = state
                 self.V.pop(state)
+                print("from V removed state")
+                print("Xsamples added state")
+                print(" state was x= " + str(state.x) + " y = " +str(state.y))
 
-
-                 
+    def Radius(self,q):        
+        # i have no idea how to do this one
+        n = 2
+        A = (1+1/n)**(1/n)
+        B = (2/np.pi)**(1/n)
+        C = (np.log(q)/q)**(1/n)
+        return A*B*C
     def Sample(self):
         # add self.m number of valid samples
         self.dbgSampleCount +=1
@@ -231,6 +272,7 @@ class BIT_STAR:
             yRand = random.uniform(self.yMin, self.yMax)
             xIdx = int(np.floor(xRand))
             yIdx = int(np.floor(self.yMax - yRand))
+
             # i'm pretty sure its supposed to sample from around where you are in the search 
             tmpG = self.calculate_L2(xRand, yRand, self.start.x, self.start.y)
             tmpH = self.calculate_L2(xRand, yRand, self.goal.x, self.goal.y)
@@ -274,18 +316,24 @@ class BIT_STAR:
         #print(self.Qv)
         print("Edge Queue length", len(self.Qe)) 
         print("Vertex Queue length", len(self.Qe)) 
+
         # we're interested in the State that we are searching on, not the value its sorted by really
+        print("self.Qv == ", self.Qv)
+        # when this line hits, sometimes theres not enough stuff in Qv
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         print("v in ExpandVertex",v)
         print("Does v.x " + str(v.x) + " v.y " + str(v.y) + "Belong to self.Vold", v in self.Vold)
+        print("Compare to self.r = ", self.r)
 
         # i think we clear it each time
         self.Xnear = {}
         #print("self.Xsamples in ExpandVertex",self.Xsamples)
+        print("how many samples do we got? ", len(self.Xsamples))
         for i in self.Xsamples:                                             # A2.2
             if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
                 self.Xnear[i] = i 
+
         #print("self.Xnear", self.Xnear)
         print("len Xnear contains " + str(len(self.Xnear)) + " elements")
         for i in self.Xnear:
@@ -297,7 +345,7 @@ class BIT_STAR:
             print("gHatV", gHatV)
             print("cHat", cHat)
             print("hHatX", hHatX)
-            print("fHat", fHat)
+            #print("fHat", fHat)
             if gHatV + cHat + hHatX < self.goal.gT:
                 edgeToAdd = Edge()
                 edgeToAdd.source_state = v
@@ -318,7 +366,7 @@ class BIT_STAR:
         if v not in self.Vold:                                              # A2.4
             print("in self.Vold section")
             self.Vnear = {} 
-            for i in self.Vold:                                             # A2.2
+            for i in self.V:                                             # A2.2 "worked" with self.Vold
                 print("v.x " + str(v.x) + " v.y " + str(v.y))
                 print("i.x " + str(i.x) + " i.y " + str(i.y))
                 if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
@@ -344,12 +392,12 @@ class BIT_STAR:
                     if edgeToAdd not in self.E:
                         heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
         print("self.c cost ", self.c)
-        print("EXPAND NEXT VERTEX FINISHED") 
+        print("EXPAND NEXT VERTEX FINISHED A SINGLE LOOP") 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <2000:                                             # A1.3
+        while self.tmpWhile <10000:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -364,26 +412,29 @@ class BIT_STAR:
                 #self.Vold = self.V                                          # A1.7 (kind of working)
                 self.Vold = self.V.copy()                                          # A1.7
                 print("self.Vold == self.V", self.Vold == self.V)
-                self.QvCount+=1
 
                 #print("self.Qv", self.Qv)
                 #print("self.start.gT", self.start.gT)
                 #print("self.QvCount", self.QvCount)
                 #print("self.start", self.start)
                 # the line below at least did something
-                #heapq.heappush(self.Qv, (self.start.gT, self.QvCount, self.start))        # A1.8
 
                 print("before A1.8 length of self.V", len(self.V))
                 print("before A1.8 length of self.Qv", len(self.V))
                 for vertex in self.V:
+                    self.QvCount+=1
                     print("pushing every state in v to the vertex queue")
-                    heapq.heappush(self.Qv, (vertex.gT, self.QvCount, vertex))        # A1.8
+                    #heapq.heappush(self.Qv, (vertex.gT, self.QvCount, vertex))        # A1.8 was working but i broke it
+                    print("sorting value", vertex.gT + vertex.hHat)
+                    sortValue = vertex.gT + vertex.hHat
+                    heapq.heappush(self.Qv, (sortValue, self.QvCount, vertex))        # A1.8
                 print("after A1.8 length of self.V", len(self.V))
                 print("after A1.8 length of self.Qv", len(self.Qv))
                 #print("printing self.Qv in bit star main ", self.Qv)
                 #print(self.Qv)
                 #self.r = len(self.V) + len(self.Xsamples)                   # A1.9
-                #self.r = 2.0 
+                #self.r = self.Radius(len(self.V) + len(self.Xsamples))
+                #self.r = 5.1 
                 #print(" printing that weird radius thing", self.r)
         
 
@@ -418,10 +469,12 @@ class BIT_STAR:
 
 
             print("Vm.gT", Vm.gT) 
+            print("currentEdge.source_statex x = " + str(currentEdge.source_state.x) + " " + str(currentEdge.source_state.y))
+            print("currentEdge.target_statex x = " + str(currentEdge.target_state.x) + " " + str(currentEdge.target_state.y))
             print("currentEdge.cHat", currentEdge.cHat) 
 
             # IMPORTANT TO CALCULATE hHAT 
-            Vm.gHat = self.calcDist(Xm, self.goal)
+            Vm.gHat = self.calcDist(Vm, self.start)
             Xm.hHat = self.calcDist(Xm, self.goal)
 
             print("trying to add hHat into the vertex set")
@@ -429,6 +482,7 @@ class BIT_STAR:
             print("Vm.gT", Vm.gT)
             print("currentEdge.cHat", currentEdge.cHat)
             print("Xm.hHat", Xm.hHat)
+            print("self.goal.gT = ", self.goal.gT)
 
             if Vm.gT + currentEdge.cHat + Xm.hHat < self.goal.gT:                     # A1.14 
                 print("passed check of a1.14")
@@ -487,7 +541,8 @@ class BIT_STAR:
 
                             Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
-                            heapq.heappush(self.Qv, (Xm.gT,self.QvCount, Xm))   #A1.21 #self.E[currentEdge] = currentEdge 
+                            sortvalue = Xm.gT +Xm.hHat
+                            heapq.heappush(self.Qv, (sortvalue, self.QvCount, Xm))   #A1.21 #self.E[currentEdge] = currentEdge 
                         print("EDGE ADDED TO MOTION TREE")
                         print("CHECK EDGE CONTAINS GOAL STATE")
                         if currentEdge.target_state == self.goal:
@@ -523,6 +578,7 @@ class BIT_STAR:
                             if edge.target_state == Xm: 
                                 if edge.cHat + edge.source_state.gT >= Xm.gT:
                                     heapq.heappop(self.Qe)
+                                    #self.Qe.remove(element)
 
                         # stop if the goal and start can be directly connected
                         # this is a hack and not in the real algorithm
@@ -614,7 +670,7 @@ if __name__ == "__main__":
     vertices = open("vertices.txt","w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(420)
+    random.seed(69)
     # input stuff
     #
     BS = BIT_STAR()
