@@ -40,7 +40,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 100 
+        self.m = 200 
 
         # i would rather have a project than no project
         self.start = State()
@@ -77,6 +77,10 @@ class BIT_STAR:
         self.dbgSampleCount = 0
         self.dbgExpandVertexCount = 0
         self.dbgCollisionCheckCount = 0
+
+        # anytime plot
+        self.cVector = []
+        self.tmpWhileVector = []
     
     def readEnvironment(self, envFile):
         A = []
@@ -140,7 +144,7 @@ class BIT_STAR:
         b = y1 - m*x1
         print("slope m = ",m)
         print("intercept b = ", b)
-        t = np.linspace(x1, x2,50)
+        t = np.linspace(x1, x2,200)
         print("len t", len(t))
         Y = m*t + b
         plt.plot(t,Y)
@@ -152,10 +156,10 @@ class BIT_STAR:
         #print(self.xMax)
         #print(self.yMax-Y)
         coordinate_Y = np.floor(self.yMax-Y) 
-        print(coordinate_t)
-        print(coordinate_Y)
+        #print(coordinate_t)
+        #print(coordinate_Y)
         #print("PRINTING OBSTACLES")
-        print(self.obs)
+        #print(self.obs)
         #print("PRINTING OBSTACLES FINISHED")
         # i iterates over the 
         for i in range(len(coordinate_t)): 
@@ -198,7 +202,7 @@ class BIT_STAR:
 
         print("A3.3")
         for edge in list(self.E):                                                       #A3.3
-            if ((edge.source_state.fHat > self.c) or (edge.target_state.fHat > self.c)):
+            if ((edge.source_state.fHat > self.c) and (edge.target_state.fHat > self.c)):
                 print("attempting to prune an edge")
                 self.E.pop(edge)
 
@@ -252,9 +256,9 @@ class BIT_STAR:
         if len(queue) == 0:
             return inf
         else:
-            print("what is the data structure coming out of bestQueueValue")
-            print(queue)
-            print("smallest 2 values")
+            #print("what is the data structure coming out of bestQueueValue")
+            #print(queue)
+            #print("smallest 1 values")
             print(heapq.nsmallest(1,queue))
             bestValue = heapq.nsmallest(1,queue)[0][0]
             print("BEST VALUE IS")
@@ -275,7 +279,7 @@ class BIT_STAR:
 
         # i think we clear it each time
         self.Xnear = {}
-        print("self.Xsamples in ExpandVertex",self.Xsamples)
+        #print("self.Xsamples in ExpandVertex",self.Xsamples)
         for i in self.Xsamples:                                             # A2.2
             if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
                 self.Xnear[i] = i 
@@ -335,14 +339,14 @@ class BIT_STAR:
                     edgeToAdd.f = gHatV + cHat + hHatX
                     self.QvCount+=1
                     if edgeToAdd not in self.E:
-                        heapq.heappush(self.Qe, (edgeToAdd.f,self.QvCount, edgeToAdd))
+                        heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
         print("self.c cost ", self.c)
         print("EXPAND NEXT VERTEX FINISHED") 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <50:                                             # A1.3
+        while self.tmpWhile <500:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -376,12 +380,13 @@ class BIT_STAR:
                 #print("printing self.Qv in bit star main ", self.Qv)
                 #print(self.Qv)
                 #self.r = len(self.V) + len(self.Xsamples)                   # A1.9
+                self.r = 2.0 
                 #print(" printing that weird radius thing", self.r)
         
 
             # you actually dont want to pop from the vertex queue
             print("checking Qe")
-            print("self.Qe", self.Qe)
+            #print("self.Qe", self.Qe)
             print("self.Qe lenght", len(self.Qe))
             print("qv bqv", self.bestQueueValue(self.Qv))
             print("apparent number of elements in Qe",len(self.Qe))
@@ -394,7 +399,7 @@ class BIT_STAR:
             #if len(self.Qe) > 0:
             
             print("POST VERTEX EXPANSION")
-            print("SELF> QE", self.Qe)
+            #print("SELF> QE", self.Qe)
             print("QE length", len(self.Qe))
 
             currentEdge0 = heapq.heappop(self.Qe)                           # A1.12, A1.13
@@ -491,7 +496,9 @@ class BIT_STAR:
                             print("ENTERING COST TRAVERSAL")
                             while edgeOfInterest.source_state != self.start:
                                 tmpCost += edgeOfInterest.cHat
-                                print("tmp Cost", tmpCost)
+                                print("in COST TRAVERSAL tmp Cost", tmpCost)
+                                #if tmpCost > self.c:
+                                #    break
                                 # i dont want to iterate thru the whole tree just to find the edge target_state = edgeOfInterest.source_state  
                                 # but its whats going to finish my project before december 2
                                 for edge in list(self.E.values()):
@@ -503,7 +510,9 @@ class BIT_STAR:
                             print("FINAL tmpCost", tmpCost)
                             if tmpCost < self.c:
                                 self.c = tmpCost
-                        print(self.E)                                           
+                                self.cVector.append(self.c)
+                                self.tmpWhileVector.append(self.tmpWhile)
+                        #print(self.E)                                           
                         self.E[currentEdge] = currentEdge                       #A1.22
                         if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
                             heapq.heappop(self.Qe)                              #A1.23
@@ -601,7 +610,7 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment69.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment719.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
@@ -629,3 +638,7 @@ if __name__ == "__main__":
     gv.plotMotionTree(V,E,BS.obs, BS.yMax,BS.Xsamples,BS.start, BS.goal)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
+    print(BS.tmpWhileVector)
+    print(BS.cVector)
+    plt.plot(BS.tmpWhileVector, BS.cVector)
+    plt.show()
