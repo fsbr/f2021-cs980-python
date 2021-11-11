@@ -1,5 +1,5 @@
 # giving in
-
+import sys,os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -7,6 +7,8 @@ import heapq
 import random
 
 inf = np.Inf
+
+sys.stdout = open(os.devnull, 'w')
 
 class State:
     def __init__(self):
@@ -568,7 +570,7 @@ class Visualizer:
             countX = 0
             for j in i:
                 if j == 1:
-                    rect = patches.Rectangle((np.floor(countX),np.floor(yMax - countY-1)), 1,1, linewidth=1, edgecolor="r",facecolor="r")
+                    rect = patches.Rectangle((np.floor(countX),np.floor(yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
                     ax.add_patch(rect) 
                 countX+=1
             countY +=1
@@ -606,11 +608,11 @@ if __name__ == "__main__":
     vertices = open("vertices.txt","w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    #random.seed(69)
+    random.seed(420)
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment719.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
