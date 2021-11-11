@@ -8,7 +8,8 @@ import random
 
 inf = np.Inf
 
-sys.stdout = open(os.devnull, 'w')
+# comment out to supress the terminal
+#sys.stdout = open(os.devnull, 'w')
 
 class State:
     def __init__(self):
@@ -42,7 +43,7 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 200 
+        self.m = 50 
 
         # i would rather have a project than no project
         self.start = State()
@@ -348,7 +349,7 @@ class BIT_STAR:
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <500:                                             # A1.3
+        while self.tmpWhile <2000:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -382,7 +383,7 @@ class BIT_STAR:
                 #print("printing self.Qv in bit star main ", self.Qv)
                 #print(self.Qv)
                 #self.r = len(self.V) + len(self.Xsamples)                   # A1.9
-                self.r = 2.0 
+                #self.r = 2.0 
                 #print(" printing that weird radius thing", self.r)
         
 
@@ -486,8 +487,7 @@ class BIT_STAR:
 
                             Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
-                            heapq.heappush(self.Qv, (Xm.gT,self.QvCount, Xm))   #A1.21
-                        #self.E[currentEdge] = currentEdge 
+                            heapq.heappush(self.Qv, (Xm.gT,self.QvCount, Xm))   #A1.21 #self.E[currentEdge] = currentEdge 
                         print("EDGE ADDED TO MOTION TREE")
                         print("CHECK EDGE CONTAINS GOAL STATE")
                         if currentEdge.target_state == self.goal:
@@ -516,10 +516,16 @@ class BIT_STAR:
                                 self.tmpWhileVector.append(self.tmpWhile)
                         #print(self.E)                                           
                         self.E[currentEdge] = currentEdge                       #A1.22
-                        if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
-                            heapq.heappop(self.Qe)                              #A1.23
+                        #if (Vm.gT + currentEdge.cHat >= Xm.gT):                 #A1.23
+                            #heapq.heappop(self.Qe)                              #A1.23
+                        for element in self.Qe:
+                            edge = element[2]
+                            if edge.target_state == Xm: 
+                                if edge.cHat + edge.source_state.gT >= Xm.gT:
+                                    heapq.heappop(self.Qe)
 
                         # stop if the goal and start can be directly connected
+                        # this is a hack and not in the real algorithm
                         if self.E[currentEdge].source_state == self.start and self.E[currentEdge].target_state == self.goal:
                             break
             else:                                                               #A1.24
