@@ -312,6 +312,16 @@ class BIT_STAR:
             print(bestValue)
             return bestValue 
 
+    def NearestNeighborsX(self):
+        # sorts the samples by whos nearest to me 
+        XnearQueue = []
+        for i in self.Xsamples:
+            heapq.heappush(XnearQueue, (calculate_L2(i.x,i,y,v.y,v.y), i))
+
+        for j in range(self.nNearest):
+            a = heapq.heappop(XnearQueue)[1]
+            self.Xnear[a] = a
+        
     def ExpandVertex(self):
         self.dbgExpandVertexCount+=1
         print("queue in expand vertex")
@@ -336,6 +346,7 @@ class BIT_STAR:
             if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
                 self.Xnear[i] = i 
 
+        # doing nearest neighbors
         #print("self.Xnear", self.Xnear)
         print("len Xnear contains " + str(len(self.Xnear)) + " elements")
         for i in self.Xnear:
