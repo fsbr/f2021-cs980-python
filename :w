@@ -233,44 +233,48 @@ class BIT_STAR:
                 foundInTree = False
 
                 # pop the edge, then check that we need to update the corresponding vertex
-
-
-
-                #for e1 in list(self.E):
-                #if e1.target_state == edge.target_state: 
-                #    print("state found as successor")
-                #    foundInTree = True
-                print("state not found as successor")
-                #if edge.target_state in self.V:
-                    print("did we ever actually do this?")
-                    self.V[edge.target_state].gT = inf
-
-                    # this thing could get fucking big lol
-                    # don't i just do breadth first search lol
-                    #rootState = self.V[edge.target_state]
-                    #if self.V[edge.source_state] in self.V:
-                    rootState = edge.source_state       # i think source state is correct
-                    trimQueue = queue.Queue()
-                    trimQueue.put(rootState)
-                    edgesToPop = [] 
-                    while not trimQueue.empty():
-                        bfsV = trimQueue.get()
-                        for edge in self.E:
-                            if edge.source_state == bfsV:
-                                edge.source_state.gT = inf
-                                edge.target_state.gT = inf 
-                                # do i pop the edge here?
-                                edgesToPop.append(edge)
-                                trimQueue.put(edge.target_state)
-
-                    for e in edgesToPop:
-                        self.E.pop(e)
-
-
-                #self.E.pop(edge)
+                self.E.pop(edge)
                 print("A3.3 pruned an edge")
+                #if edge.source_state in self.V: 
+                #    rootState = self.V[edge.source_state]
+                #    trimQueue = queue.Queue()
+                #    trimQueue.put(rootState)
+                #    while not trimQueue.empty():
+                #        bfsV = trimQueue.get()
+                #        for edge in self.E:
+                #            if edge.source_state == bfsV:
+                #                edge.source_state.gT = inf
+                #                edge.target_state.gT = inf 
+                #                trimQueue.put(edge.target_state)
                             
                 # uncomment this block below if u break something
+                for e1 in list(self.E):
+                    if e1.target_state == edge.target_state: 
+                        print("state found as successor")
+                        foundInTree = True
+                    if foundInTree == False:
+                        print("state not found as successor")
+                        if edge.target_state in self.V:
+                            print("did we ever actually do this?")
+                            self.V[edge.target_state].gT = inf
+
+                            # this thing could get fucking big lol
+                            # don't i just do breadth first search lol
+                            #rootState = self.V[edge.target_state]
+                            #if self.V[edge.source_state] in self.V:
+                            rootState = edge.source_state       # i think source state is correct
+                            trimQueue = queue.Queue()
+                            trimQueue.put(rootState)
+                            edgesToPop = [] 
+                            while not trimQueue.empty():
+                                bfsV = trimQueue.get()
+                                for edge in self.E:
+                                    if edge.source_state == bfsV:
+                                        edge.source_state.gT = inf
+                                        edge.target_state.gT = inf 
+                                        # do i pop the edge here?
+                                        edgesToPop.append(edge)
+                                        trimQueue.put(edge.target_state)
                                 
             
         print("A3.4")
@@ -724,7 +728,7 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment9.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
