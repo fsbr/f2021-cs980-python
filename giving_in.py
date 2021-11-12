@@ -241,30 +241,30 @@ class BIT_STAR:
                 #    print("state found as successor")
                 #    foundInTree = True
                 print("state not found as successor")
-                if edge.target_state in self.V:
-                    print("did we ever actually do this?")
-                    self.V[edge.target_state].gT = inf
+                #if edge.target_state in self.V:
+                    #print("did we ever actually do this?")
+                    #self.V[edge.target_state].gT = inf
 
                     # this thing could get fucking big lol
                     # don't i just do breadth first search lol
                     #rootState = self.V[edge.target_state]
                     #if self.V[edge.source_state] in self.V:
-                    rootState = edge.source_state       # i think source state is correct
-                    trimQueue = queue.Queue()
-                    trimQueue.put(rootState)
-                    edgesToPop = [] 
-                    while not trimQueue.empty():
-                        bfsV = trimQueue.get()
-                        for edge in self.E:
-                            if edge.source_state == bfsV:
-                                edge.source_state.gT = inf
-                                edge.target_state.gT = inf 
-                                # do i pop the edge here?
-                                edgesToPop.append(edge)
-                                trimQueue.put(edge.target_state)
+                rootState = edge.source_state       # i think source state is correct
+                trimQueue = queue.Queue()
+                trimQueue.put(rootState)
+                edgesToPop = [] 
+                while not trimQueue.empty():
+                    bfsV = trimQueue.get()
+                    for edge in self.E:
+                        if edge.source_state == bfsV:
+                            edge.source_state.gT = inf
+                            edge.target_state.gT = inf 
+                            # do i pop the edge here?
+                            edgesToPop.append(edge)
+                            trimQueue.put(edge.target_state)
 
-                    for e in edgesToPop:
-                        self.E.pop(e)
+                for e in edgesToPop:
+                    self.E.pop(e)
 
 
                 #self.E.pop(edge)
@@ -436,11 +436,83 @@ class BIT_STAR:
                         heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
         print("self.c cost ", self.c)
         print("EXPAND NEXT VERTEX FINISHED A SINGLE LOOP") 
+
+    def ExpandVertex2(self):
+        # nearest neighbors are guaranteed to get put onto the edge queue
+        v0 = heapq.heappop(self.Qv)                                          # A2.1
+        v = v0[2]
+        
+        # sorting the nearest samples
+        self.Xnear = {} 
+        sampleQueue = [] 
+        for i in self.Xsamples:
+            heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i))
+        
+        neighborSampleCounter = 0
+        while neighborSampleCounter < self.nNearest:
+            sampleToAdd = heapq.heappop(sampleQueue)[1]
+            gHatV = self.calcDist(v, self.start)
+            cHat = self.calcDist(v, sampleToAdd)
+            hHatX = self.calcDist(sampleToAdd, self.goal)
+
+            edgeToAdd = Edge()
+            edgeToAdd.source_state = v
+            edgeToAdd.target_state = sampleToAdd 
+            edgeToAdd.cHat = cHat
+            edgeToAdd.f = gHatV + cHat + hHatX
+
+            self.QeCount+=1
+            heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
+
+            neighborSampleCounter+=1
+
+        print("IS V IN VOLD", v in self.Vold)
+        if v not in self.Vold:
+            print("IN THE V OLD PART")
+            self.Vnear = {} 
+            sampleQueue = [] 
+            print("length of self.V", len(self.V))
+            for i in self.V:
+                heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i))
+            print("samplequeue", len(sampleQueue))
+
+            neighborTreeCounter = 0
+            if self.nNearest <= len(self.V):
+                boundary = self.nNearest
+            else:
+                boundary = len(self.V)
+
+            counter = 0
+
+            while counter <= boundary:
+                i = heapq.heappop(sampleQueue)[1]
+                gHatV = self.calcDist(v, self.start)
+                cHat = self.calcDist(v, i)
+                hHatX = self.calcDist(i, self.goal)
+                print("ghatv", gHatV)
+                print("cHat", cHat)
+                print("hHatX", hHatX)
+                edgeToAdd = Edge()
+                edgeToAdd.source_state = v
+                edgeToAdd.target_state = i
+                edgeToAdd.cHat = cHat
+                edgeToAdd.f = gHatV + cHat + hHatX
+                counter+=1 
+                self.QeCount+=1
+                if edgeToAdd not in self.E:
+                    heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
+            
+
+
+
+
+
+
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <10000:                                             # A1.3
+        while self.tmpWhile <100:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -473,8 +545,8 @@ class BIT_STAR:
                     heapq.heappush(self.Qv, (sortValue, self.QvCount, vertex))        # A1.8
                 print("after A1.8 length of self.V", len(self.V))
                 print("after A1.8 length of self.Qv", len(self.Qv))
-                #print("printing self.Qv in bit star main ", self.Qv)
-                #print(self.Qv)
+
+                # RADIUS STUFF
                 #self.r = len(self.V) + len(self.Xsamples)                   # A1.9
                 #self.r = 10*self.Radius(len(self.V) + len(self.Xsamples))
                 #self.r = 5.1 
@@ -491,7 +563,7 @@ class BIT_STAR:
             #while (len(self.Qv) > 0) and self.bestQueueValue(self.Qv) <= self.bestQueueValue(self.Qe): # A1.10
             while self.bestQueueValue(self.Qv) <= self.bestQueueValue(self.Qe): # A1.10
                 print("getting to expand next vertex")
-                self.ExpandVertex()                                         # A1.11
+                self.ExpandVertex2()                                         # A1.11
 
             #if len(self.Qe) > 0:
             
