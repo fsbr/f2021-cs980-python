@@ -241,7 +241,7 @@ class BIT_STAR:
                 #    print("state found as successor")
                 #    foundInTree = True
                 print("state not found as successor")
-                #if edge.target_state in self.V:
+                if edge.target_state in self.V:
                     print("did we ever actually do this?")
                     self.V[edge.target_state].gT = inf
 
