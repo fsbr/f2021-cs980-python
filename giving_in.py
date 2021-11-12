@@ -257,7 +257,7 @@ class BIT_STAR:
                     bfsV = trimQueue.get()
                     for edge in self.E:
                         if edge.source_state == bfsV:
-                            edge.source_state.gT = inf
+                            #edge.source_state.gT = inf
                             edge.target_state.gT = inf 
                             # do i pop the edge here?
                             edgesToPop.append(edge)
@@ -278,6 +278,7 @@ class BIT_STAR:
             if state.gT == inf:
                 self.Xsamples[state] = state
                 self.V.pop(state)
+
                 print("from V removed state")
                 print("Xsamples added state")
                 print(" state was x= " + str(state.x) + " y = " +str(state.y))
@@ -468,51 +469,47 @@ class BIT_STAR:
 
         print("IS V IN VOLD", v in self.Vold)
         if v not in self.Vold:
-            print("IN THE V OLD PART")
+            nearestQueue = []
             self.Vnear = {} 
-            sampleQueue = [] 
-            print("length of self.V", len(self.V))
             for i in self.V:
-                heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i))
-            print("samplequeue", len(sampleQueue))
+                heapq.heappush(nearestQueue, (self.calculate_L2(v.x, v.y, i.x,i.y), i))
 
-            neighborTreeCounter = 0
-            if self.nNearest <= len(self.V):
-                boundary = self.nNearest
-            else:
-                boundary = len(self.V)
+            print("self.Vnear in vold part", self.Vnear)
+            print("start in self.Vnear = ", self.start in self.Vnear)
+            print("v in self.Vnear = ", v in self.Vnear)
+            print("nearestQueue", nearestQueue)
 
-            counter = 0
-
-            while counter <= boundary:
-                i = heapq.heappop(sampleQueue)[1]
-                gHatV = self.calcDist(v, self.start)
-                cHat = self.calcDist(v, i)
-                hHatX = self.calcDist(i, self.goal)
-                print("ghatv", gHatV)
-                print("cHat", cHat)
-                print("hHatX", hHatX)
-                edgeToAdd = Edge()
-                edgeToAdd.source_state = v
-                edgeToAdd.target_state = i
-                edgeToAdd.cHat = cHat
-                edgeToAdd.f = gHatV + cHat + hHatX
-                counter+=1 
-                self.QeCount+=1
-                if edgeToAdd not in self.E:
-                    heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
+            # pop off the first element, which is always itself
+            heapq.heappop(nearestQueue)
+            print("nearestQueue", nearestQueue)
             
+            nearestTreeCounter = 0
+            
+            #for i in nearestQueue:
+            sampleToAdd = heapq.heappop(nearestQueue)[1]
+            gHatV = self.calcDist(v, self.start)
+            cHat = self.calcDist(v, sampleToAdd)
+            hHatX = self.calcDist(sampleToAdd, self.goal)
 
-
-
-
+            edgeToAdd = Edge()
+            edgeToAdd.source_state = v
+            edgeToAdd.target_state = sampleToAdd 
+            edgeToAdd.cHat = cHat
+            edgeToAdd.f = gHatV + cHat + hHatX
+            self.QeCount+=1
+            if edgeToAdd not in self.E:
+                heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
+                print("PLACED AN EDGE BASED ON VOLD PART")
+                print("EDGE ADDED WAS( " + str(edgeToAdd.f) + " self.QeCount " + str(self.QeCount) + " edgeToAdd " + str(edgeToAdd))
+            
+                
 
 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <100:                                             # A1.3
+        while self.tmpWhile <500:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -523,16 +520,8 @@ class BIT_STAR:
                 self.Prune()
 
                 Xsamples = self.Sample()                                    # A1.6
-                #print("length of Xsamples", len(Xsamples))
-                #self.Vold = self.V                                          # A1.7 (kind of working)
                 self.Vold = self.V.copy()                                          # A1.7
                 print("self.Vold == self.V", self.Vold == self.V)
-
-                #print("self.Qv", self.Qv)
-                #print("self.start.gT", self.start.gT)
-                #print("self.QvCount", self.QvCount)
-                #print("self.start", self.start)
-                # the line below at least did something
 
                 print("before A1.8 length of self.V", len(self.V))
                 print("before A1.8 length of self.Qv", len(self.V))
