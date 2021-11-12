@@ -45,10 +45,11 @@ class BIT_STAR:
         # adjacency grid
         self.obs = np.array([]) 
 
-        self.tmpWhileBound =2000 
+        self.tmpWhileBound = 1000
         # Sample() params
-        self.m = 100
-        self.nNearest = 100    # must be smaller than m
+        self.m = 420 
+        self.nNearest = 69    # must be smaller than m
+        # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
         # i would rather have a project than no project
         self.start = State()
@@ -455,7 +456,7 @@ class BIT_STAR:
             heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i) )
         print("after placing stuff into my sampleQueue")
         print("lenght of sampleQueue", len(sampleQueue))
-        print(sampleQueue)
+        #print(sampleQueue)
         
         neighborSampleCounter = 0
         if self.nNearest < len(sampleQueue):
@@ -841,7 +842,7 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment104.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment53.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
