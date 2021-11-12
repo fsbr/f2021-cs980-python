@@ -46,8 +46,8 @@ class BIT_STAR:
         self.obs = np.array([]) 
 
         # Sample() params
-        self.m = 40 
-        self.nNearest = 10      # must be smaller than m
+        self.m = 50 
+        self.nNearest = 10     # must be smaller than m
 
         # i would rather have a project than no project
         self.start = State()
@@ -233,22 +233,7 @@ class BIT_STAR:
                 foundInTree = False
 
                 # pop the edge, then check that we need to update the corresponding vertex
-
-
-
-                #for e1 in list(self.E):
-                #if e1.target_state == edge.target_state: 
-                #    print("state found as successor")
-                #    foundInTree = True
                 print("state not found as successor")
-                #if edge.target_state in self.V:
-                    #print("did we ever actually do this?")
-                    #self.V[edge.target_state].gT = inf
-
-                    # this thing could get fucking big lol
-                    # don't i just do breadth first search lol
-                    #rootState = self.V[edge.target_state]
-                    #if self.V[edge.source_state] in self.V:
                 rootState = edge.source_state       # i think source state is correct
                 trimQueue = queue.Queue()
                 trimQueue.put(rootState)
@@ -440,18 +425,37 @@ class BIT_STAR:
 
     def ExpandVertex2(self):
         # nearest neighbors are guaranteed to get put onto the edge queue
+        self.dbgEV2X = 0
+        self.dbgEV2V = 0
+        self.dbgVVold = False
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         
         # sorting the nearest samples
         self.Xnear = {} 
         sampleQueue = [] 
+        print("len(sampleQueue)", len(sampleQueue))
+        print("len(self.Xsamples)", len(self.Xsamples))
         for i in self.Xsamples:
-            heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i))
+            heapq.heappush(sampleQueue, (self.calculate_L2(v.x, v.y, i.x, i.y), i) )
+        print("after placing stuff into my sampleQueue")
+        print("lenght of sampleQueue", len(sampleQueue))
+        print(sampleQueue)
         
         neighborSampleCounter = 0
-        while neighborSampleCounter < self.nNearest:
-            sampleToAdd = heapq.heappop(sampleQueue)[1]
+        if self.nNearest < len(sampleQueue):
+            sampleBoundary = self.nNearest
+        else:
+            sampleBoundary = len(sampleQueue)
+        while neighborSampleCounter < sampleBoundary:
+            print("len sampleQueue", len(sampleQueue))
+            protoSample = heapq.heappop(sampleQueue)
+            print("protoSample", protoSample)
+            print("len(protoSample)", len(protoSample))
+            print("protoSample", protoSample[0])
+            print("protoSample", protoSample[1])
+            sampleToAdd = protoSample[1]
+            #sampleToAdd = heapq.heappop(sampleQueue)[1]
             gHatV = self.calcDist(v, self.start)
             cHat = self.calcDist(v, sampleToAdd)
             hHatX = self.calcDist(sampleToAdd, self.goal)
@@ -466,9 +470,11 @@ class BIT_STAR:
             heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
 
             neighborSampleCounter+=1
+            self.dbgEV2X +=1
 
         print("IS V IN VOLD", v in self.Vold)
         if v not in self.Vold:
+            self.dbgVVold = True
             nearestQueue = []
             self.Vnear = {} 
             for i in self.V:
@@ -484,32 +490,44 @@ class BIT_STAR:
             print("nearestQueue", nearestQueue)
             
             nearestTreeCounter = 0
-            
-            #for i in nearestQueue:
-            sampleToAdd = heapq.heappop(nearestQueue)[1]
-            gHatV = self.calcDist(v, self.start)
-            cHat = self.calcDist(v, sampleToAdd)
-            hHatX = self.calcDist(sampleToAdd, self.goal)
+            if len(nearestQueue) < self.nNearest:
+                boundary = len(nearestQueue)
+            else:
+                boundary = self.nNearest
+            print("boundary is", boundary)
+            print("len(nearestQueue)", len(nearestQueue))
+            print("self.nNearest", self.nNearest)
+            print("nearestTreeCounter before loop = " , nearestTreeCounter)
 
-            edgeToAdd = Edge()
-            edgeToAdd.source_state = v
-            edgeToAdd.target_state = sampleToAdd 
-            edgeToAdd.cHat = cHat
-            edgeToAdd.f = gHatV + cHat + hHatX
-            self.QeCount+=1
-            if edgeToAdd not in self.E:
-                heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
-                print("PLACED AN EDGE BASED ON VOLD PART")
-                print("EDGE ADDED WAS( " + str(edgeToAdd.f) + " self.QeCount " + str(self.QeCount) + " edgeToAdd " + str(edgeToAdd))
-            
-                
+            while nearestTreeCounter < boundary:
+                sampleToAdd = heapq.heappop(nearestQueue)[1]
+                print("popped the following sample", sampleToAdd)
+                gHatV = self.calcDist(v, self.start)
+                cHat = self.calcDist(v, sampleToAdd)
+                hHatX = self.calcDist(sampleToAdd, self.goal)
 
+                edgeToAdd = Edge()
+                edgeToAdd.source_state = v
+                edgeToAdd.target_state = sampleToAdd 
+                edgeToAdd.cHat = cHat
+                edgeToAdd.f = gHatV + cHat + hHatX
+                self.QeCount+=1
+                print("EDGE TO ADD IN SELF.E ?", edgeToAdd in self.E)
+                if edgeToAdd not in self.E:
+                    heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
+                    print("PLACED AN EDGE BASED ON VOLD PART")
+                    print("EDGE ADDED WAS( " + str(edgeToAdd.f) + " self.QeCount " + str(self.QeCount) + " edgeToAdd " + str(edgeToAdd))
+                    self.dbgEV2X +=1 
+                else:
+                    print("SKIPPED THE DGE")
+                nearestTreeCounter+=1
+                print("in loop nearestTreeCounter", nearestTreeCounter)
 
     def BIT_STAR_MAIN(self):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <500:                                             # A1.3
+        while self.tmpWhile <5000:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
@@ -720,7 +738,7 @@ class Visualizer:
             yVec.append(edge.source_state.y)
             yVec.append(edge.target_state.y)
             ax.plot(xVec, yVec, "m-x")
-            ax.plot(xVec,yVec, "gx")
+            ax.plot(xVec,yVec, "b")
             xVec = []
             yVec = []
         #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
@@ -735,7 +753,7 @@ class Visualizer:
         for state in samples:
             xSampleVector.append(state.x)
             ySampleVector.append(state.y)
-        plt.plot(xSampleVector,ySampleVector, "bo", markersize=2)
+        plt.plot(xSampleVector,ySampleVector, "bo", markersize=0.75)
 
         # plotting the obstacles
         countY = 0
