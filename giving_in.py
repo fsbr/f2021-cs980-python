@@ -45,9 +45,10 @@ class BIT_STAR:
         # adjacency grid
         self.obs = np.array([]) 
 
+        self.tmpWhileBound =2000 
         # Sample() params
-        self.m = 50 
-        self.nNearest = 10     # must be smaller than m
+        self.m = 100
+        self.nNearest = 100    # must be smaller than m
 
         # i would rather have a project than no project
         self.start = State()
@@ -75,7 +76,8 @@ class BIT_STAR:
         self.QvCount = 0
 
         # solution cost
-        self.c = inf
+        #self.c = inf
+        self.c = 9999
 
         # DEBUG PARAMS
         # temporarily run the while loop
@@ -233,8 +235,11 @@ class BIT_STAR:
                 foundInTree = False
 
                 # pop the edge, then check that we need to update the corresponding vertex
+
+                #edge.source_state.gT = inf          # we are about to disconnect it, dont think source_state.gT = inf is right
                 print("state not found as successor")
-                rootState = edge.source_state       # i think source state is correct
+                #rootState = edge.source_state       # i think source state is correct
+                rootState = edge.target_state
                 trimQueue = queue.Queue()
                 trimQueue.put(rootState)
                 edgesToPop = [] 
@@ -242,12 +247,15 @@ class BIT_STAR:
                     bfsV = trimQueue.get()
                     for edge in self.E:
                         if edge.source_state == bfsV:
+                        #if edge.target_state == bfsV:
                             #edge.source_state.gT = inf
                             edge.target_state.gT = inf 
                             # do i pop the edge here?
                             edgesToPop.append(edge)
                             trimQueue.put(edge.target_state)
 
+                # dont prune if the last hting there was the goal
+                # this is definitely wrong
                 for e in edgesToPop:
                     self.E.pop(e)
 
@@ -259,6 +267,13 @@ class BIT_STAR:
                                 
             
         print("A3.4")
+        #for state in list(self.V):
+        #    if state.gT == inf:
+        #        self.Xsamples[state] = state
+
+        #for state in list(self.V):
+        #    if state.gT == inf:
+        #        self.V.pop(state)
         for state in list(self.V):                                                      #A3.4
             if state.gT == inf:
                 self.Xsamples[state] = state
@@ -321,7 +336,7 @@ class BIT_STAR:
         else:
             #print("what is the data structure coming out of bestQueueValue")
             #print(queue)
-            #print("smallest 1 values")
+            print("smallest 1 values")
             print(heapq.nsmallest(1,queue))
             bestValue = heapq.nsmallest(1,queue)[0][0]
             print("BEST VALUE IS")
@@ -447,6 +462,10 @@ class BIT_STAR:
             sampleBoundary = self.nNearest
         else:
             sampleBoundary = len(sampleQueue)
+
+        # there isn't always something in the sample queue
+        print("neighborSampleCounter: ", neighborSampleCounter)
+        print("sampleBoundary", sampleBoundary)
         while neighborSampleCounter < sampleBoundary:
             print("len sampleQueue", len(sampleQueue))
             protoSample = heapq.heappop(sampleQueue)
@@ -473,7 +492,11 @@ class BIT_STAR:
             self.dbgEV2X +=1
 
         print("IS V IN VOLD", v in self.Vold)
-        if v not in self.Vold:
+        print("len self.V", len(self.V))
+        vNotIn = v not in self.Vold
+        noSamplesLeft = len(self.Xsamples) == 0
+        #if v not in self.Vold:
+        if vNotIn: #or noSamplesLeft:
             self.dbgVVold = True
             nearestQueue = []
             self.Vnear = {} 
@@ -483,11 +506,11 @@ class BIT_STAR:
             print("self.Vnear in vold part", self.Vnear)
             print("start in self.Vnear = ", self.start in self.Vnear)
             print("v in self.Vnear = ", v in self.Vnear)
-            print("nearestQueue", nearestQueue)
+            #print("nearestQueue", nearestQueue)
 
             # pop off the first element, which is always itself
             heapq.heappop(nearestQueue)
-            print("nearestQueue", nearestQueue)
+            #print("nearestQueue", nearestQueue)
             
             nearestTreeCounter = 0
             if len(nearestQueue) < self.nNearest:
@@ -527,17 +550,23 @@ class BIT_STAR:
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
-        while self.tmpWhile <5000:                                             # A1.3
+        while self.tmpWhile <self.tmpWhileBound:                                             # A1.3
         #while True:
             # i think each iteration of this we dump the motion tree
             print("LINE A1.4 CHECK")
             print("Qe Size" + str(len(self.Qe)) + "Qv Size" + str(len(self.Qv)))
+
+            # THIS IS A HACK NOT PART OF THE ALGORITHM
+            #if (len(self.Xsamples) == 0):
+            #    self.Sample()
             if (len(self.Qe) == 0 and len(self.Qv) == 0):                   # A1.4
                 print("LINE A1.5")
                 print("prune")                                              # A1.5 
                 self.Prune()
 
-                Xsamples = self.Sample()                                    # A1.6
+                #Xsamples = self.Sample()                                    # A1.6
+                self.Xsamples = self.Sample()
+                print("A1.6, length of Xsamples", len(self.Xsamples))
                 self.Vold = self.V.copy()                                          # A1.7
                 print("self.Vold == self.V", self.Vold == self.V)
 
@@ -623,6 +652,7 @@ class BIT_STAR:
                     realCost = inf 
                 else:
                     print("NO COLLISION")
+                    currentEdge.cHat = self.calcDist(currentEdge.source_state, currentEdge.target_state)
                     realCost = currentEdge.cHat                             
                     self.dbgAttemptedEdgeList.append(currentEdge)
 
@@ -658,13 +688,18 @@ class BIT_STAR:
                             print("Lenght of self.Xsamples before", len(self.Xsamples))
                             self.Xsamples.pop(Xm)                               #A1.20
                             print("Length of self.Xsamples after", len(self.Xsamples))
+
+                            # a hack not part of the algorithm
+                            if len(self.Xsamples) == 0:
+                                self.Sample()
                             print("Length of Vertex Set A1.21 before", len(self.V))
                             self.V[Xm] = Xm                                     #A1.21
                             print("Length of Vertex Set A1.21 after", len(self.V))
                             print("is Xm in V?", Xm in self.V)
                             print("is Xm in Vold?", Xm in self.Vold)
 
-                            Xm.gT = Vm.gT + currentEdge.cHat
+                            Xm.gT = Vm.gT + realCost 
+                            #Xm.gT = Vm.gT + currentEdge.cHat
                             self.QvCount+=1
                             sortvalue = Xm.gT +Xm.hHat
                             heapq.heappush(self.Qv, (sortvalue, self.QvCount, Xm))   #A1.21 #self.E[currentEdge] = currentEdge 
@@ -691,7 +726,10 @@ class BIT_STAR:
 
                             print("FINAL tmpCost", tmpCost)
                             if tmpCost < self.c:
+
+                                # have to also attach the new cost to the goal state i think?
                                 self.c = tmpCost
+                                self.goal.gT = self.c
                                 self.cVector.append(self.c)
                                 self.tmpWhileVector.append(self.tmpWhile)
                         #print(self.E)                                           
@@ -714,7 +752,7 @@ class BIT_STAR:
                 self.Qe = []                                                    #A1.25
                 self.Qv = []                                                    #A1.25
            
-        print("SELF.tmpWhile", self.tmpWhile)
+            print("SELF.tmpWhile", self.tmpWhile)
         return self.V, self.E 
 
 class Visualizer:
@@ -738,7 +776,7 @@ class Visualizer:
             yVec.append(edge.source_state.y)
             yVec.append(edge.target_state.y)
             ax.plot(xVec, yVec, "m-x")
-            ax.plot(xVec,yVec, "b")
+            ax.plot(xVec,yVec, "m")
             xVec = []
             yVec = []
         #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
@@ -803,7 +841,7 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment9.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment104.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
