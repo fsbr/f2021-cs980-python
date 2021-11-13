@@ -49,8 +49,8 @@ class BIT_STAR:
 
         self.tmpWhileBound = 10000 
         # Sample() params
-        self.m = 100 
-        self.nNearest = 40    # must be smaller than m
+        self.m = 10 
+        self.nNearest = 8    # must be smaller than m (actually turned out to not be true)
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
         # i would rather have a project than no project
@@ -168,9 +168,9 @@ class BIT_STAR:
         t = np.linspace(x1, x2,collCheck) #10,000 to avoid the diag
         ##print("len t", len(t))
         Y = m*t + b
-        plt.plot(t,Y)
-        plt.xlim((0,11))
-        plt.ylim((0,11))
+        ##plt.plot(t,Y)
+        ##plt.xlim((0,11))
+        ##plt.ylim((0,11))
         #plt.show()
         coordinate_t = np.floor(t) 
         #print(Y)
@@ -328,6 +328,7 @@ class BIT_STAR:
             ##print("goal.gT",self.goal.gT)
             if (tmpG+tmpH) < self.goal.gT: 
                 ##print("adding samples into Xsamples")
+                # this sometimes causes an index error
                 if self.obs[yIdx][xIdx] == 0:
                     stateToAdd = State()
                     stateToAdd.x = xRand
@@ -763,7 +764,7 @@ class BIT_STAR:
                         #if self.goal in self.V and self.start in self.V:
                         #    break
                         # terminate if within 5% of the optimal solution
-                        if self.c < 1.05*(self.calcDist(self.start, self.goal)):
+                        if self.c < 1.01*(self.calcDist(self.start, self.goal)):
                             break
             else:                                                               #A1.24
                 ##print("Failed check of #A1.14")
@@ -809,7 +810,7 @@ class Visualizer:
         for state in samples:
             xSampleVector.append(state.x)
             ySampleVector.append(state.y)
-        plt.plot(xSampleVector,ySampleVector, "bo", markersize=0.75)
+        plt.plot(xSampleVector,ySampleVector, "o", color = "#757575", markersize=0.75)
 
         # plotting the obstacles
         countY = 0
@@ -885,8 +886,10 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs50/environment50_2.txt")
-    #BS.readEnvironment("test_environments/grid_envs/environment90.txt")
+    #BS.readEnvironment("test_environments/grid_envs50/environment50_2.txt")
+    #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
+    # env 90 caused an out of bounds error on collision checking. might be hard to track down
+    BS.readEnvironment("test_environments/grid_envs/environment699.txt")
     #BS.readEnvironment("snake.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
@@ -895,7 +898,7 @@ if __name__ == "__main__":
 
     #from timeit import Timer
     t_start = time.time()
-    t_end = time.time() +600 
+    t_end = time.time() + 60
     V,E = BS.BIT_STAR_MAIN(t_start, t_end)
     #t.timeit()
 
@@ -920,5 +923,5 @@ if __name__ == "__main__":
     #print(BS.tmpWhileVector)
     print("time vector", BS.timeVector)
     print("cost vector", BS.cVector)
-    plt.plot(BS.timeVector, BS.cVector)
+    plt.step(BS.timeVector, BS.cVector)
     plt.show()
