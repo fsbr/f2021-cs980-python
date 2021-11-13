@@ -746,7 +746,10 @@ class BIT_STAR:
 
                         # stop if the goal and start can be directly connected
                         # this is a hack and not in the real algorithm
-                        if self.E[currentEdge].source_state == self.start and self.E[currentEdge].target_state == self.goal:
+                        #if self.goal in self.V and self.start in self.V:
+                        #    break
+                        # terminate if within 5% of the optimal solution
+                        if self.c < 1.05*(self.calcDist(self.start, self.goal)):
                             break
             else:                                                               #A1.24
                 print("Failed check of #A1.14")
@@ -842,7 +845,7 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment53.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment70.txt")
     #BS.readEnvironment("environment69.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
