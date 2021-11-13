@@ -49,7 +49,7 @@ class BIT_STAR:
 
         self.tmpWhileBound = 10000 
         # Sample() params
-        self.m = 10 
+        self.m = 40 
         self.nNearest = 8    # must be smaller than m (actually turned out to not be true)
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
@@ -849,6 +849,9 @@ class Visualizer:
         plt.xlim((0,xMax))
         plt.ylim((0,yMax))
         plt.axis("equal")
+        plt.title("Motion Tree, Samples, and Solution Path")
+        plt.xlabel("Distance (m)")
+        plt.ylabel("Distance (m)")
         plt.show()
 
     def plotAttemptedEdge(self, attemptedEdges, obsMap, yMax):
@@ -886,10 +889,10 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    #BS.readEnvironment("test_environments/grid_envs50/environment50_2.txt")
+    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     # env 90 caused an out of bounds error on collision checking. might be hard to track down
-    BS.readEnvironment("test_environments/grid_envs/environment699.txt")
+    #BS.readEnvironment("test_environments/grid_envs/environment699.txt")
     #BS.readEnvironment("snake.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
@@ -898,7 +901,7 @@ if __name__ == "__main__":
 
     #from timeit import Timer
     t_start = time.time()
-    t_end = time.time() + 60
+    t_end = time.time() +30 
     V,E = BS.BIT_STAR_MAIN(t_start, t_end)
     #t.timeit()
 
@@ -924,4 +927,7 @@ if __name__ == "__main__":
     print("time vector", BS.timeVector)
     print("cost vector", BS.cVector)
     plt.step(BS.timeVector, BS.cVector)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Solution Cost")
+    plt.title("Solution Cost vs. Time")
     plt.show()
