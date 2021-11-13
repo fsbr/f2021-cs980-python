@@ -7,7 +7,7 @@ import heapq
 import random
 
 import queue # for tree pruning
-
+plt.style.use("seaborn-dark")
 
 inf = np.Inf
 
@@ -45,10 +45,10 @@ class BIT_STAR:
         # adjacency grid
         self.obs = np.array([]) 
 
-        self.tmpWhileBound = 1000
+        self.tmpWhileBound = 4000 
         # Sample() params
-        self.m = 420 
-        self.nNearest = 69    # must be smaller than m
+        self.m = 100 
+        self.nNearest = 10    # must be smaller than m
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
         # i would rather have a project than no project
@@ -154,7 +154,15 @@ class BIT_STAR:
         b = y1 - m*x1
         print("slope m = ",m)
         print("intercept b = ", b)
-        t = np.linspace(x1, x2,200) #10,000 to avoid the diag
+        # 200 checks per unit in X
+        numberOfChecks = 500
+        checkY = int(abs(y2-y1)*numberOfChecks)
+        checkX = int(abs(x2-x1)*numberOfChecks)
+        if checkY > checkX:
+            collCheck = checkY
+        else:
+            collCheck = checkX
+        t = np.linspace(x1, x2,collCheck) #10,000 to avoid the diag
         print("len t", len(t))
         Y = m*t + b
         plt.plot(t,Y)
@@ -755,7 +763,6 @@ class BIT_STAR:
                 print("Failed check of #A1.14")
                 self.Qe = []                                                    #A1.25
                 self.Qv = []                                                    #A1.25
-           
             print("SELF.tmpWhile", self.tmpWhile)
         return self.V, self.E 
 
@@ -763,7 +770,7 @@ class Visualizer:
     def __init__(self):
         print("Visualizer")
 
-    def plotMotionTree(self,V,E,obsMap,yMax, samples, start, goal):
+    def plotMotionTree(self,V,E,obsMap,xMax, yMax, samples, start, goal):
         fig, ax = plt.subplots()
         print("Plotting the Motion Tree")
         startX = start.x
@@ -779,8 +786,9 @@ class Visualizer:
             xVec.append(edge.target_state.x)
             yVec.append(edge.source_state.y)
             yVec.append(edge.target_state.y)
-            ax.plot(xVec, yVec, "m-x")
-            ax.plot(xVec,yVec, "m")
+            #ax.plot(xVec, yVec, "r-x")
+            ax.plot(xVec, yVec, "-", color="#FFA71A")
+            #ax.plot(xVec,yVec, "r")
             xVec = []
             yVec = []
         #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
@@ -807,8 +815,33 @@ class Visualizer:
                     ax.add_patch(rect) 
                 countX+=1
             countY +=1
-        plt.xlim((0,11))
-        plt.ylim((0,11))
+        plt.plot(startX,startY, "go", markersize=10)
+        plt.plot(goalX,goalY, "ro", markersize=10)
+        xVecSolu = []
+        yVecSolu = []
+        
+        foundGoal = False
+        stateOfInterest = goal
+        while stateOfInterest != start:
+            for e in E:
+                if e.target_state == stateOfInterest:
+                    foundGoal = True
+                    xVecSolu.append(e.source_state.x)
+                    yVecSolu.append(e.source_state.y)
+                    xVecSolu.append(e.target_state.x)
+                    yVecSolu.append(e.target_state.y)
+                    stateOfInterest = e.source_state
+                    plt.plot(xVecSolu, yVecSolu, color="#007FFF", linewidth=3)
+                    xVecSolu = []
+                    yVecSolu = []
+            if foundGoal == False:
+                break
+                         
+
+                    
+        plt.xlim((0,xMax))
+        plt.ylim((0,yMax))
+        plt.axis("equal")
         plt.show()
 
     def plotAttemptedEdge(self, attemptedEdges, obsMap, yMax):
@@ -832,9 +865,10 @@ class Visualizer:
                     ax.add_patch(rect) 
                 countX+=1
             countY +=1
-        
-        plt.xlim((0,11))
-        plt.ylim((0,11))
+
+        # too lazy
+        plt.xlim((0,50))
+        plt.ylim((0,50))
         plt.show()
 
 if __name__ == "__main__":
@@ -845,8 +879,9 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs/environment70.txt")
-    #BS.readEnvironment("environment69.txt")
+    #BS.readEnvironment("test_environments/grid_envs50/environment50_2.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment90.txt")
+    #BS.readEnvironment("environment0.txt")
     #hit = BS.testCheckObs()
     #print("pritning hit")
     #print(hit)
@@ -871,7 +906,7 @@ if __name__ == "__main__":
         print("y", i.y)
 
     gv = Visualizer()
-    gv.plotMotionTree(V,E,BS.obs, BS.yMax,BS.Xsamples,BS.start, BS.goal)
+    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     print(BS.tmpWhileVector)
