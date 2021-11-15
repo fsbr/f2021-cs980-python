@@ -49,8 +49,8 @@ class BIT_STAR:
 
         self.tmpWhileBound = 10000 
         # Sample() params
-        self.m = 40 
-        self.nNearest = 8    # must be smaller than m (actually turned out to not be true)
+        self.m = 100 
+        self.nNearest = 10    # must be smaller than m (actually turned out to not be true)
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
         # i would rather have a project than no project
@@ -882,7 +882,8 @@ class Visualizer:
         plt.show()
 
 if __name__ == "__main__":
-    vertices = open("vertices.txt","w")
+    #vertices = open("vertices.txt","w")
+    costFile = open("costs.csv", "w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
     #random.seed(69)
@@ -900,8 +901,9 @@ if __name__ == "__main__":
     #print("asdfadsf")
 
     #from timeit import Timer
+    test_length = 30
     t_start = time.time()
-    t_end = time.time() +30 
+    t_end = time.time() + test_length
     V,E = BS.BIT_STAR_MAIN(t_start, t_end)
     #t.timeit()
 
@@ -931,3 +933,9 @@ if __name__ == "__main__":
     plt.ylabel("Solution Cost")
     plt.title("Solution Cost vs. Time")
     plt.show()
+    costFile.write(str(BS.m)+","+str(BS.nNearest)+"\n")
+    costFile.write(str(test_length) + "\n")
+    for item in range(len(BS.cVector)):
+        costFile.write(str(BS.timeVector[item]) + "," + str(BS.cVector[item]))
+        costFile.write("\n")
+    costFile.close()
