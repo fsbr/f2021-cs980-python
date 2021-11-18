@@ -41,7 +41,6 @@ class Edge:
         self.target_state = State()
         self.edgeCost = inf
 
-
 class LPASTAR:
     def __init__(self):
         self.start = State()
