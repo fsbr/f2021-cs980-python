@@ -32,8 +32,6 @@ class State:
         self.isStart = False
         self.isGoal = False 
         self.explored = False
-    
-
 
 class Edge:
     def __init(self):
@@ -48,7 +46,7 @@ class LPASTAR:
         self.stateId = 0
         self.V = {}
         self.E = {}
-
+        self.envFileList = []
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
 
@@ -65,7 +63,8 @@ class LPASTAR:
     def convertToCoordinate(self, xIdx, yIdx):
         return "unfinished function"
 
-    def readEnvironment(self, envFile):
+    def readEnvironment(self, envFile,updated = False):
+        self.envFileList.append(envFile)
         A = []
         f = open(envFile)
         for x in f:
@@ -108,8 +107,14 @@ class LPASTAR:
         print("ENVIRONMENT READING fHat goal", self.start.f)
         print("ENVIRONMENT READING fHat goal", self.goal.f)
 
+        # i think i need a copy of the original maps to make sure that I can compare edge costs
+        if updated == False:
+            self.obs1 = self.obs
+        else:
+            self.obs2 = self.obs
         #self.Grid = np.empty((self.xMax, self.yMax)) 
         self.Grid = [[State() for x in range(self.xMax)] for y in range(self.yMax)]
+
 
     def getSucc(self, u):
         # ALL this should do is append the successor states
@@ -207,6 +212,7 @@ class LPASTAR:
         return [minItem + h, minItem]
 
     def Initialize(self):
+        self.changedMap = [[ [False, False] for x in range(self.xMax)] for y in range(self.yMax)]
         self.U = []             # {02}
         # {03} we did when we generate the state
         self.start.rhs = 0      # {04}
@@ -270,6 +276,22 @@ class LPASTAR:
             u.explored = True
             debugCounter+=1
 
+    def updateEdgeCosts(self):
+        print("I would be updating the edge costs here if I knew wtf I was doing")
+
+        # okay this xor made me feel smart AF
+        for y in range(self.yMax):
+            for x in range(self.xMax):
+                # obstacle changed, was added
+                candidateTuple = [False, False] 
+                candidateTuple[0] = bool(self.obs1[y][x]) ^ bool(self.obs2[y][x]) 
+                if self.obs1[y][x] == 1:
+                    candidateTuple[1] = False
+                else:
+                    candidateTuple[1] = True
+                self.changedMap[y][x] = candidateTuple            
+        print(self.changedMap)
+
     def LPASTAR_MAIN(self):
         self.Initialize()
         self.ComputeShortestPath()
@@ -287,14 +309,17 @@ class LPASTAR:
         print("Final Path", pathList)
         
         # wait for (or i guess induce) changes in edge cost
+        LPA.readEnvironment("environment50_B_0.txt", True)
+        self.updateEdgeCosts()
+
         # gameplan is basically 
         # update the edge cost c(u,v)
         # self.UpdateVertex(v,u)
-        
-
 
 if __name__ == "__main__":
     LPA = LPASTAR()
-    LPA.readEnvironment("environment50_3.txt")
+    #LPA.readEnvironment("environment50_3.txt")
+    LPA.readEnvironment("environment50_A_0.txt")
     LPA.LPASTAR_MAIN()
     print("LPA.goal.g = ", LPA.goal.g)
+    print("LPA maps", LPA.envFileList)
