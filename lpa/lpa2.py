@@ -20,10 +20,6 @@ class State:
         self.f = inf
         self.rhs = inf
 
-        # for a grid, I guess its the index where you'd find the state
-        self.cameFrom = ()
-        self.edgeCost = inf
-
         # for grid worlds
         self.iX = inf
         self.iY = inf
@@ -32,14 +28,13 @@ class State:
         self.isStart = False
         self.isGoal = False 
         self.explored = False
-    
 
+        #self.cameFrom
 
 class Edge:
     def __init(self):
         self.source_state = State()
         self.target_state = State()
-        self.edgeCost = inf
 
 
 class LPASTAR:
@@ -135,8 +130,6 @@ class LPASTAR:
                     # add the successors to the list
                     # let's worry about edges later
                     #stateToAdd = State()
-                    print("debug stepX", stepX)
-                    print("debug stepY", stepY)
                     stateToAdd.iX = stepX
                     stateToAdd.iY = stepY
                     stateToAdd.x = stepX - 0.5
@@ -159,34 +152,24 @@ class LPASTAR:
         # should JUST do the update vertex process on a SINGLE state
         # u is the root in that case
         #print("state in U",s)
-        if s.explored == False:
-            if s != self.start:
-                print("s was not equal to self.start")
-                print("distance between root and state", self.calcDist(root,s))
-                print("s.g", s.g)
-                edgeCost = self.calcDist(root,s)
-                #tentativeRhs = root.g + self.calcDist(root,s)
-                tentativeRhs = root.g + edgeCost
-                print("tentativeRhs", tentativeRhs)
-                print("s.rhs", s.rhs)
-                if tentativeRhs < s.rhs:
-                    s.rhs = tentativeRhs
-                    s.edgeCost = edgeCost
-                    s.cameFrom = (root.iX,root.iY)
-
-            # lets remove it later
-            print("in UpdateVertex, before pushing state")
+        if s != self.start:
+            print("s was not equal to self.start")
+            print("distance between root and state", self.calcDist(root,s))
             print("s.g", s.g)
+            tentativeRhs = root.g + self.calcDist(root,s)
+            print("tentativeRhs", tentativeRhs)
             print("s.rhs", s.rhs)
-            for keyStatePair in self.U:
-                if keyStatePair[2] == s:
-                    self.U.remove(keyStatePair)
-            if s.g != s.rhs:
-                self.stateId+=1
-                # in order for the call to CalculateKey to be valid, I need to make sure that it has 
-                # g, h, rhs, which it looks like (at least in the one that i check), it does
-                heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
+            if tentativeRhs < s.rhs:
+                s.rhs = tentativeRhs
 
+        # lets remove it later
+        print("in UpdateVertex, before pushing state")
+        print("s.g", s.g)
+        print("s.rhs", s.rhs)
+        if s.g != s.rhs:
+            self.stateId+=1
+            if s.explored == False:
+                heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
 
     def TopKey(self, U):
         # returns smallest prioirty in the queu or inf U is empty
@@ -199,8 +182,7 @@ class LPASTAR:
     def CalculateKey(self, state):
         # put that shit right on the state, then this function is easy
         # so i need to be putting the g, rhs, and h values on the state when i update vertex
-        # this assumes that that stuff is calculated on the state already when you go to look for it
-        # and that might not be true
+        # this assumes that teh 
         g = state.g
         rhs = state.rhs
         h = state.h
@@ -226,73 +208,7 @@ class LPASTAR:
         #print(self.Grid)
         heapq.heappush(self.U, (self.CalculateKey(self.start), self.stateId, self.start)) #{05}
 
-    def ComputeShortestPath(self):
-        print("self.U top value", self.U)
-        print("self.U top value, broken up", self.U[0][0])
-        goalKey = self.CalculateKey(self.goal)
-        print("goal Key", goalKey)
-
-        debugCounter = 0
-        # so this algorithm will terminate when the topkey is greater than the goal key
-        while self.TopKey(self.U) < self.CalculateKey(self.goal) or (self.goal.rhs != self.goal.g):
-
-        #while debugCounter < 3:
-            print("self.CalculateKey(self.goal)", self.CalculateKey(self.goal))
-            print("self.TopKey(self.U)", self.TopKey(self.U))
-            print("self.goal.rhs", self.goal.rhs)
-            print("self.goal.g")
-            print("stateId ", self.stateId)
-            u0 = heapq.heappop(self.U)
-            u = u0[2]
-            print("POPPED STATE")
-            print("small u is",u)
-            print("u.g", u.g)
-            print("u.rhs", u.rhs)
-            self.V[u] = u
-            if u.g > u.rhs:
-                print("we are in the first cae")
-                #if u!=self.start:
-                print("the vertex in question is not the start, so I'm setting u.g = u.rhs")
-                u.g = u.rhs
-
-                # for all succ(u)
-                self.succs = self.getSucc(u) 
-                for s in self.succs:
-                    # i feel like i "need" this u term here
-                    self.UpdateVertex(s, u)
-            else:
-                # the start state does tot his one.... not sure if thats supposed to happen or not, its just what IS happening
-                print("we are in the second case")
-                if u != self.start:
-                    u.g = inf
-                self.succs = self.getSucc(u) 
-                for s in self.succs:
-                    self.UpdateVertex(s, u)
-            u.explored = True
-            debugCounter+=1
-
-    def LPASTAR_MAIN(self):
-        self.Initialize()
-        self.ComputeShortestPath()
-        gridX = self.goal.iX
-        gridY = self.goal.iY
-        pathList = []
-        pathList.append( (gridX, gridY))
-        gridLocation = self.Grid[gridY][gridX]
-        print("gridLocation.cameFrom", gridLocation.cameFrom)
-        while gridLocation != self.start:
-            newX = gridLocation.cameFrom[0]
-            newY = gridLocation.cameFrom[1]
-            pathList.append((newX,newY))
-            gridLocation = self.Grid[newY][newX]
-        print("Final Path", pathList)
-        
-        # wait for (or i guess induce) changes in edge cost
-        # gameplan is basically 
-        # update the edge cost c(u,v)
-        # self.UpdateVertex(v,u)
-        
-
+    def ComputeShortest(self):
 
 if __name__ == "__main__":
     LPA = LPASTAR()
