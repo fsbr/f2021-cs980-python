@@ -49,7 +49,7 @@ class BIT_STAR:
 
         self.tmpWhileBound = 10000 
         # Sample() params
-        self.m = 100 
+        self.m = 1
         self.nNearest = 10    # must be smaller than m (actually turned out to not be true)
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
@@ -705,8 +705,8 @@ class BIT_STAR:
                             ##print("Length of self.Xsamples after", len(self.Xsamples))
 
                             # a hack not part of the algorithm
-                            if len(self.Xsamples) == 0:
-                                self.Sample()
+                            #if len(self.Xsamples) == 0:
+                            #    self.Sample()
                             ##print("Length of Vertex Set A1.21 before", len(self.V))
                             self.V[Xm] = Xm                                     #A1.21
                             ##print("Length of Vertex Set A1.21 after", len(self.V))
@@ -890,8 +890,10 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+    #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+    #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment104.txt")
     # env 90 caused an out of bounds error on collision checking. might be hard to track down
     #BS.readEnvironment("test_environments/grid_envs/environment699.txt")
     #BS.readEnvironment("snake.txt")
@@ -901,7 +903,7 @@ if __name__ == "__main__":
     #print("asdfadsf")
 
     #from timeit import Timer
-    test_length = 30
+    test_length = 60 
     t_start = time.time()
     t_end = time.time() + test_length
     V,E = BS.BIT_STAR_MAIN(t_start, t_end)
@@ -926,13 +928,13 @@ if __name__ == "__main__":
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     #print(BS.tmpWhileVector)
-    print("time vector", BS.timeVector)
-    print("cost vector", BS.cVector)
-    plt.step(BS.timeVector, BS.cVector)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Solution Cost")
-    plt.title("Solution Cost vs. Time")
-    plt.show()
+    #print("time vector", BS.timeVector)
+    #print("cost vector", BS.cVector)
+    #plt.step(BS.timeVector, BS.cVector)
+    #plt.xlabel("Time (s)")
+    #plt.ylabel("Solution Cost")
+    #plt.title("Solution Cost vs. Time")
+    #plt.show()
     costFile.write(str(BS.m)+","+str(BS.nNearest)+"\n")
     costFile.write(str(test_length) + "\n")
     for item in range(len(BS.cVector)):
