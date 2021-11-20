@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import heapq
 import random
+#from numba import jit
 
 import time
 
@@ -49,8 +50,8 @@ class BIT_STAR:
 
         self.tmpWhileBound = 10000 
         # Sample() params
-        self.m = 1
-        self.nNearest = 10    # must be smaller than m (actually turned out to not be true)
+        self.m = 100
+        self.nNearest = 10   # must be smaller than m (actually turned out to not be true)
         # what would happen if nNearest was actually bigger than the batch is there any reason this isn't allowed
 
         # i would rather have a project than no project
@@ -794,7 +795,7 @@ class Visualizer:
             yVec.append(edge.source_state.y)
             yVec.append(edge.target_state.y)
             #ax.plot(xVec, yVec, "r-x")
-            ax.plot(xVec, yVec, "-", color="#FFA71A")
+            ax.plot(xVec, yVec, "-", color="#EA0923")
             #ax.plot(xVec,yVec, "r")
             xVec = []
             yVec = []
@@ -890,10 +891,10 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
-    BS.readEnvironment("test_environments/grid_envs/environment104.txt")
+    #BS.readEnvironment("test_environments/grid_envs/environment104.txt")
     # env 90 caused an out of bounds error on collision checking. might be hard to track down
     #BS.readEnvironment("test_environments/grid_envs/environment699.txt")
     #BS.readEnvironment("snake.txt")
@@ -903,7 +904,7 @@ if __name__ == "__main__":
     #print("asdfadsf")
 
     #from timeit import Timer
-    test_length = 60 
+    test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
     V,E = BS.BIT_STAR_MAIN(t_start, t_end)
