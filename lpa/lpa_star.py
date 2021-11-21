@@ -83,33 +83,34 @@ class LPASTAR:
                     self.obs[j][i] = 0
                 else:
                     self.obs[j][i] = 1
-        print("self.obs")
-        print(self.obs)
-        self.start.x = float(A[2+self.yMax])
-        self.start.y = float(A[3+self.yMax])
-        self.goal.x = float(A[4+self.yMax])
-        self.goal.y = float(A[5+self.yMax])
-
-        print(self.start.x)
-        print(self.start.y)
-        print(self.goal.x)
-        print(self.goal.y)
-        self.start.g = 0
-        self.start.h = self.calcDist(self.start,self.goal)
-        self.start.f = self.start.g + self.start.h
-        self.start.isStart = True
-
-        # a difference between g and ghat
-        self.goal.g = inf #self.calcDist(self.start, self.goal)
-        self.goal.h = 0
-        self.goal.f = self.goal.g + self.goal.h
-        self.start.isGoal = True
-        print("ENVIRONMENT READING fHat goal", self.start.f)
-        print("ENVIRONMENT READING fHat goal", self.goal.f)
 
         # i think i need a copy of the original maps to make sure that I can compare edge costs
         if updated == False:
+            # stuff we only want to do on the first time
             self.obs1 = self.obs
+            print("self.obs")
+            print(self.obs)
+            self.start.x = float(A[2+self.yMax])
+            self.start.y = float(A[3+self.yMax])
+            self.goal.x = float(A[4+self.yMax])
+            self.goal.y = float(A[5+self.yMax])
+
+            print(self.start.x)
+            print(self.start.y)
+            print(self.goal.x)
+            print(self.goal.y)
+            self.start.g = 0
+            self.start.h = self.calcDist(self.start,self.goal)
+            self.start.f = self.start.g + self.start.h
+            self.start.isStart = True
+
+            # a difference between g and ghat
+            self.goal.g = inf #self.calcDist(self.start, self.goal)
+            self.goal.h = 0
+            self.goal.f = self.goal.g + self.goal.h
+            self.start.isGoal = True
+            print("ENVIRONMENT READING fHat goal", self.start.f)
+            print("ENVIRONMENT READING fHat goal", self.goal.f)
         else:
             self.obs2 = self.obs
         #self.Grid = np.empty((self.xMax, self.yMax)) 
