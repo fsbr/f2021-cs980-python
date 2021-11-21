@@ -1,6 +1,8 @@
 # i really want the V, E architechture
 import numpy as np
 import heapq
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 inf = np.Inf
 class State():
@@ -24,8 +26,13 @@ class Edge():
 
 class LPASTAR:
     def __init__(self):
+        # v,e are the full representation
         self.V = {}
         self.E = {}
+
+        # motion e, v are the states that we consider as part of the search frontier
+        self.motionE = {}
+        self.motionV = {}
     
         self.start = State()
         self.goal = State()
@@ -262,6 +269,7 @@ class LPASTAR:
                 print("self.succs", self.succs)
                 for edge in self.succs:
                     self.UpdateVertex(edge)
+                    self.motionE[edge] = edge
             else:
                 print("second case")
                 if u != self.start:
@@ -270,25 +278,71 @@ class LPASTAR:
                 edgeU = Edge()
                 edgeU.source_state = u
                 edgeU.target_state = u      # {union of {16}}
+                edgeU.edgeCost = 0
+                # actually appending this loops the algorithm forever 
+                # self.succs.append(edgeU)       # lets worry about this later
                 for edge in self.succs:
                     self.UpdateVertex(edge)
+                    self.motionE[edge] = edge
 
     def Main(self):
         self.Initialize()
         print("before compute shortest, self.start.g", self.start.g)
         self.ComputeShortestPath()
+        # we dont need "cameFrom" labels on our vertex struct we have edges
+        solution1 = []
+        for candidateEdge in self.motionE:
+            if candidateEdge.target_state == self.goal:
+                stateOfInterest = candidateEdge.target_state
+                edgeOfInterest = candidateEdge
+                print("found the goal in the set of edges")
+
+        solution1.append(self.goal)
+        solution1.append(edgeOfInterest.source_state)
+        #while edgeOfInterest.source_state != self.start:
+        #    pass
         # for all directed edges with changed edge costs
         # update the edge costs c(u,v)
         # UpdateVertex(v, root is u)
 
 class Visualizer:
-    def __init__(self):
+    def __init__(self, planningInstance):
         print("Visualizer")
+        self.planningInstance = planningInstance
+        self.obsMap = planningInstance.obs
+        self.yMax = planningInstance.yMax
+
+    def plotMotionTree(self):
+        fig, ax = plt.subplots()
+        countY = 0
+        for i in self.obsMap:
+            countX = 0
+            for j in i:
+                if j == 1:
+                    rect = patches.Rectangle((np.floor(countX),np.floor(self.yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
+                    ax.add_patch(rect) 
+                countX+=1
+            countY +=1
+
+        startRect = patches.Rectangle((np.floor(self.planningInstance.start.iX),np.floor(self.yMax - self.planningInstance.start.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="c")
+        ax.add_patch(startRect)
+        goalRect = patches.Rectangle((np.floor(self.planningInstance.goal.iX),np.floor(self.yMax - self.planningInstance.goal.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="r")
+        ax.add_patch(goalRect)
+
+        plt.title("A* Planning Instance")
+        plt.xlim((0,50))
+        plt.ylim((0,50))
+        plt.axis("equal")
+        plt.grid()
+        plt.show()
 
 if __name__ == "__main__":
     LPA = LPASTAR()
     LPA.readEnvironment("environment50_A_0.txt")
     LPA.convertGridToGraph()
     LPA.Main()
+
+    gv = Visualizer(LPA)
+    gv.plotMotionTree()
 
     
