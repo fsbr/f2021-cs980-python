@@ -11,6 +11,7 @@ world = np.zeros((50,50))
 print(world)
 inf = np.Inf
 
+# i really wish i preserved the G = (V,E) structure from bit star it would have been a lot easier
 class State:
     def __init__(self):
         self.x = inf
@@ -148,7 +149,6 @@ class LPASTAR:
 
                     ## i dont think h changes as long as the goal choice doesn't change
                     stateToAdd.h = self.calcDist(stateToAdd, self.goal)
-
                     succ.append(stateToAdd)
                 else:
                     print("state has a collision")
@@ -307,11 +307,43 @@ class LPASTAR:
             pathList.append((newX,newY))
             gridLocation = self.Grid[newY][newX]
         print("Final Path", pathList)
+        print("LPA.goal.g = ", LPA.goal.g)
+        print("LPA maps", LPA.envFileList)
         
         # wait for (or i guess induce) changes in edge cost
-        LPA.readEnvironment("environment50_B_0.txt", True)
+        LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_B_1.txt", True)
         self.updateEdgeCosts()
+        #print(self.changedMap)
+        yit = 0
+        xit = 0
+        # there might be an indexing problem here but im tired to try to solve it
+        for yVec in range(len(self.changedMap)):
+            for xVec in range(yVec):
+                print(self.changedMap[yVec][xVec])
+                if self.changedMap[yVec][xVec][0] == True:
+                    print("i would enqueue new states here")
+                    u = self.Grid[yVec][xVec]
+                    self.succs = self.getSucc(u)
+                    for s in self.succs:
+                        s.cameFrom = () 
+                        s.edgeCost = inf
+                        self.UpdateVertex(s,u)
 
+        self.ComputeShortestPath()
+        gridX = self.goal.iX
+        gridY = self.goal.iY
+        pathList = []
+        pathList.append( (gridX, gridY))
+        gridLocation = self.Grid[gridY][gridX]
+        print("gridY = " + str(gridY) + " gridX " + str(gridX))
+        print("gridLocation.cameFrom", gridLocation.cameFrom)
+        while gridLocation != self.start:
+            newX = gridLocation.cameFrom[0]
+            newY = gridLocation.cameFrom[1]
+            pathList.append((newX,newY))
+            gridLocation = self.Grid[newY][newX]
+        print("Final Path", pathList)
+        #print("printed changedmap")
         # gameplan is basically 
         # update the edge cost c(u,v)
         # self.UpdateVertex(v,u)
@@ -319,7 +351,8 @@ class LPASTAR:
 if __name__ == "__main__":
     LPA = LPASTAR()
     #LPA.readEnvironment("environment50_3.txt")
-    LPA.readEnvironment("environment50_A_0.txt")
+    LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_A_1.txt")
+    #LPA.readEnvironment("environment50_A_0.txt")
     LPA.LPASTAR_MAIN()
     print("LPA.goal.g = ", LPA.goal.g)
     print("LPA maps", LPA.envFileList)
