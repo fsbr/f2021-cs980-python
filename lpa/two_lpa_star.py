@@ -162,13 +162,17 @@ class LPASTAR:
                     stateToAdd.x = xIdx - 0.5
                     stateToAdd.y = self.yMax - yIdx + 0.5
                     stateToAdd.h = self.calcDist(stateToAdd, self.goal)
-                    self.V[stateToAdd] = stateToAdd
+                    #self.V[stateToAdd] = stateToAdd
                     #making my life easier
                     stateToAdd.iX = xIdx
                     stateToAdd.iY = yIdx
+                    #self.V[stateToAdd] = stateToAdd
+                    self.V[(xIdx, yIdx)] = stateToAdd
+                    #print("self.V", self.V)
 
         # now that all the states are in there, assemble the edges
-        for vertex in list(self.V):
+        for key, vertex in self.V.items():
+            print("vertex", vertex)
             xIdx = vertex.iX
             yIdx = vertex.iY
             #print("a new vertex")
@@ -179,14 +183,15 @@ class LPASTAR:
                 if (0 <= stepX < self.xMax -1) and (0<= stepY < self.yMax -1): 
                     edgeToAdd = Edge() 
                     edgeToAdd.source_state = vertex
-                    for targetVertex in list(self.V):
-                        if targetVertex.iX == stepX and targetVertex.iY == stepY:
-                            edgeToAdd.target_state = targetVertex
-                            if self.obs[stepY][stepX] == 1:
-                                edgeToAdd.edgeCost = inf
-                            else:
-                                edgeToAdd.edgeCost = self.calcDist(vertex, targetVertex)
-                            self.E[edgeToAdd] = edgeToAdd
+                    #for targetVertex in list(self.V):
+                    #    if targetVertex.iX == stepX and targetVertex.iY == stepY:
+                    targetVertex = self.V[(stepX, stepY)]
+                    edgeToAdd.target_state = targetVertex
+                    if self.obs[stepY][stepX] == 1:
+                        edgeToAdd.edgeCost = inf
+                    else:
+                        edgeToAdd.edgeCost = self.calcDist(vertex, targetVertex)
+                    self.E[edgeToAdd] = edgeToAdd
 
         print("goal in ", self.goal in self.V)
         print("start in", self.start in self.V)
@@ -204,7 +209,7 @@ class LPASTAR:
 
     def Initialize(self):
         self.U = []         #{01}, {04 i do somewhere else  }
-        startState = self.V[self.start]
+        startState = self.V[(self.start.iX, self.start.iY)]
         startKey = self.CalculateKey(startState)
         self.stateId += 1 
         heapq.heappush(self.U, (startKey,self.stateId, startState)) # {05}
@@ -247,7 +252,7 @@ class LPASTAR:
     def ComputeShortestPath(self):
         print("self.U", self.U)
         print("self.U[0]", self.U[0])
-        while self.U[0][0] < self.CalculateKey(self.V[self.goal]) or (self.V[self.goal].rhs != self.V[self.goal].g):
+        while self.U[0][0] < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
             u = heapq.heappop(self.U)[2]
             print("u", u)
             if u.g > u.rhs:
@@ -262,7 +267,9 @@ class LPASTAR:
                 if u != self.start:
                     u.g = inf
                 self.succs = self.getSucc(u)
-                # TODO: union operator with u here.. looks weird
+                edgeU = Edge()
+                edgeU.source_state = u
+                edgeU.target_state = u      # {union of {16}}
                 for edge in self.succs:
                     self.UpdateVertex(edge)
 
@@ -270,9 +277,18 @@ class LPASTAR:
         self.Initialize()
         print("before compute shortest, self.start.g", self.start.g)
         self.ComputeShortestPath()
+        # for all directed edges with changed edge costs
+        # update the edge costs c(u,v)
+        # UpdateVertex(v, root is u)
+
+class Visualizer:
+    def __init__(self):
+        print("Visualizer")
 
 if __name__ == "__main__":
     LPA = LPASTAR()
     LPA.readEnvironment("environment50_A_0.txt")
     LPA.convertGridToGraph()
     LPA.Main()
+
+    
