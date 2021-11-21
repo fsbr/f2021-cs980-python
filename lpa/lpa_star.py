@@ -31,7 +31,6 @@ class State:
         # flags
         self.isStart = False
         self.isGoal = False 
-        self.explored = False
 
 class Edge:
     def __init(self):
@@ -164,20 +163,19 @@ class LPASTAR:
         # should JUST do the update vertex process on a SINGLE state
         # u is the root in that case
         #print("state in U",s)
-        if s.explored == False:
-            if s != self.start:
-                print("s was not equal to self.start")
-                print("distance between root and state", self.calcDist(root,s))
-                print("s.g", s.g)
-                edgeCost = self.calcDist(root,s)
-                #tentativeRhs = root.g + self.calcDist(root,s)
-                tentativeRhs = root.g + edgeCost
-                print("tentativeRhs", tentativeRhs)
-                print("s.rhs", s.rhs)
-                if tentativeRhs < s.rhs:
-                    s.rhs = tentativeRhs
-                    s.edgeCost = edgeCost
-                    s.cameFrom = (root.iX,root.iY)
+        if s != self.start:
+            print("s was not equal to self.start")
+            print("distance between root and state", self.calcDist(root,s))
+            print("s.g", s.g)
+            edgeCost = self.calcDist(root,s)
+            #tentativeRhs = root.g + self.calcDist(root,s)
+            tentativeRhs = root.g + edgeCost
+            print("tentativeRhs", tentativeRhs)
+            print("s.rhs", s.rhs)
+            if tentativeRhs < s.rhs:
+                s.rhs = tentativeRhs
+                s.edgeCost = edgeCost
+                s.cameFrom = (root.iX,root.iY)
 
             # lets remove it later
             print("in UpdateVertex, before pushing state")
@@ -241,8 +239,7 @@ class LPASTAR:
         debugCounter = 0
         # so this algorithm will terminate when the topkey is greater than the goal key
         while self.TopKey(self.U) < self.CalculateKey(self.goal) or (self.goal.rhs != self.goal.g):
-
-        #while debugCounter < 3:
+        #while debugCounter < 3:     #use this if u only want a few iterations
             print("self.CalculateKey(self.goal)", self.CalculateKey(self.goal))
             print("self.TopKey(self.U)", self.TopKey(self.U))
             print("self.goal.rhs", self.goal.rhs)
@@ -274,12 +271,13 @@ class LPASTAR:
                 self.succs = self.getSucc(u) 
                 for s in self.succs:
                     self.UpdateVertex(s, u)
-            u.explored = True
             debugCounter+=1
 
     def updateEdgeCosts(self):
+        # basically i need to modify the c(u,v) for all changed edge costs
+        # the inputs of this function are the graph
+        # the result or output is that c(u,v) for each one changes
         print("I would be updating the edge costs here if I knew wtf I was doing")
-
         # okay this xor made me feel smart AF
         for y in range(self.yMax):
             for x in range(self.xMax):
@@ -291,7 +289,8 @@ class LPASTAR:
                 else:
                     candidateTuple[1] = True
                 self.changedMap[y][x] = candidateTuple            
-        print(self.changedMap)
+        print("uncomment the line below me to see the actual map")
+        #`print(self.changedMap)
 
     def LPASTAR_MAIN(self):
         self.Initialize()
