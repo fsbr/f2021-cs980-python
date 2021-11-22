@@ -162,21 +162,28 @@ class LPASTAR:
             self.start.isGoal = True
             print("ENVIRONMENT READING fHat goal", self.start.f)
             print("ENVIRONMENT READING fHat goal", self.goal.f)
+
+            # all the below was originally not in the thing 
+            #self.Grid = np.empty((self.xMax, self.yMax)) 
+            self.Grid = [[State() for x in range(self.xMax)] for y in range(self.yMax)]
+            # then i have to put the start and goal at the correct index
+            sX, sY = self.convertToIdx(self.start.x, self.start.y)
+            gX, gY = self.convertToIdx(self.goal.x, self.goal.y)
+            self.sX = sX
+            self.sY = sY
+            self.gX = gX
+            self.gY = gY
+
+            self.Grid[int(sY)][int(sX)] = self.start
+            self.Grid[int(gY)][int(gX)] = self.goal
+
+            self.start.iX = sX
+            self.start.iY = sY
+            self.goal.iX = sX
+            self.goal.iY = gY
         else:
             self.obs2 = self.obs
 
-        #self.Grid = np.empty((self.xMax, self.yMax)) 
-        self.Grid = [[State() for x in range(self.xMax)] for y in range(self.yMax)]
-        # then i have to put the start and goal at the correct index
-        sX, sY = self.convertToIdx(self.start.x, self.start.y)
-        gX, gY = self.convertToIdx(self.goal.x, self.goal.y)
-        self.Grid[int(sY)][int(sX)] = self.start
-        self.Grid[int(gY)][int(gX)] = self.goal
-
-        self.start.iX = sX
-        self.start.iY = sY
-        self.goal.iX = sX
-        self.goal.iY = gY
 
     def convertGridToGraph(self):
         # so what i want to do is convert my obstacle map to the V, E architecture
@@ -237,9 +244,35 @@ class LPASTAR:
                     else:
                         edgeToAdd.edgeCost = self.calcDist(vertex, targetVertex)
                     self.E[edgeToAdd] = edgeToAdd
-
         print("goal in ", self.goal in self.V)
         print("start in", self.start in self.V)
+
+    def updateEdgeCosts(self):
+        # okay so anywhere the map changes, i need new edge costs and then i 
+        print(self.obs1)
+        print(self.obs2)
+        changedIndices = []
+        for y in range(self.yMax):
+            for x in range(self.xMax):
+                # obstacle changed, was added
+                candidateTuple = [False, False] 
+                candidateTuple[0] = bool(self.obs1[y][x]) ^ bool(self.obs2[y][x]) 
+                if candidateTuple[0] == True:
+                    changedIndices.append((x,y)) 
+                if self.obs1[y][x] == 1:
+                    candidateTuple[1] = False
+                else:
+                    candidateTuple[1] = True
+                self.changedMap[y][x] = candidateTuple            
+        print("uncomment the line below me to see the actual map")
+        print(self.changedMap)
+        print("changed Indices List", changedIndices)
+
+        # so this just gives me every location that has changed, but it doesn't give the changed edge costs
+
+
+
+
 
     def CalculateKey(self, state):                                                                           
         # put that shit right on the state, then this function is easy                                       
@@ -253,6 +286,7 @@ class LPASTAR:
         return [minItem + h, minItem]     
 
     def Initialize(self):
+        self.changedMap = [[ [False, False] for x in range(self.xMax)] for y in range(self.yMax)]
         self.U = []         #{01}, {04 i do somewhere else  }
         startState = self.V[(self.start.iX, self.start.iY)]
         startKey = self.CalculateKey(startState)
@@ -357,9 +391,17 @@ class LPASTAR:
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
         print("solution path", self.solution1)
 
-        # wait for changes in the edge costs
-        # i force that, and then i do that cool XOR thing here
-        # then i smoosh that into bit*
+
+        # when i do this, it shows the solution of A, on the map of B
+        LPA.readEnvironment("snake_B.txt", True)
+        LPA.convertGridToGraph()
+
+        #for all directed edges with changed edge costs
+        #update the edge costs c(u,v)
+        #LPA.updateEdgeCosts()
+        # updatevertex(v, with root u)
+
+        # then smoosh that thing into bit*
 
 
 
@@ -372,7 +414,7 @@ if __name__ == "__main__":
     # too slow to do this one
     #LPA.readEnvironment("../test_environments/grid_envs1000/environment1000_0.txt")
     #LPA.readEnvironment("../snake.txt")
-    LPA.readEnvironment("snake_B.txt")
+    LPA.readEnvironment("snake_A.txt")
     LPA.convertGridToGraph()
     LPA.Main()
 
