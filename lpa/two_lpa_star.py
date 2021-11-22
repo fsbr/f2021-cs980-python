@@ -13,9 +13,16 @@ class State():
         self.h = inf
         self.rhs = inf
 
+        self.iX = inf
+        self.iY = inf
+
         #flags
         self.isStart = False
         self.isGoal = False
+
+        # gathering the shortest path
+        self.cameFromIdx = ()
+        self.cameFromCoord = ()
         
 
 class Edge():
@@ -43,18 +50,6 @@ class LPASTAR:
         # tiebreak the heap in order that you enqueue stuff
         self.stateId = 0
 
-
-    def simpleGraph(self):
-        a = State()
-        b = State()
-
-        self.V[a] = a
-        self.V[b] = b
-        e = Edge()
-        e.source_state = a
-        e.target_state = b
-        self.E[e] = e
-    
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
 
@@ -118,6 +113,7 @@ class LPASTAR:
             print(self.start.y)
             print(self.goal.x)
             print(self.goal.y)
+
             
             self.start.g = 0
             self.start.h = self.calcDist(self.start,self.goal)
@@ -142,6 +138,12 @@ class LPASTAR:
         gX, gY = self.convertToIdx(self.goal.x, self.goal.y)
         self.Grid[int(sY)][int(sX)] = self.start
         self.Grid[int(gY)][int(gX)] = self.goal
+
+        self.start.iX = sX
+        self.start.iY = sY
+        self.goal.iX = sX
+        self.goal.iY = gY
+
     def convertGridToGraph(self):
         # so what i want to do is convert my obstacle map to the V, E architecture
         # inputs are self.ob occupancy grid, and the output are the Vertices and Edges of the graph 
@@ -179,7 +181,7 @@ class LPASTAR:
 
         # now that all the states are in there, assemble the edges
         for key, vertex in self.V.items():
-            print("vertex", vertex)
+            #print("vertex", vertex)
             xIdx = vertex.iX
             yIdx = vertex.iY
             #print("a new vertex")
@@ -187,7 +189,9 @@ class LPASTAR:
                 stepX = xIdx + direction[0]
                 stepY = yIdx + direction[1]
                 # if im inbounds
-                if (0 <= stepX < self.xMax -1) and (0<= stepY < self.yMax -1): 
+
+                # because we did this minus one here, we can afford to be equal to it
+                if (0 <= stepX <= self.xMax -1) and (0<= stepY <= self.yMax -1): 
                     edgeToAdd = Edge() 
                     edgeToAdd.source_state = vertex
                     #for targetVertex in list(self.V):
@@ -224,27 +228,33 @@ class LPASTAR:
     def UpdateVertex(self, edge):
         s = edge.target_state
         root = edge.source_state
-        print("root.g", root.g)
-        print("root == start", root == self.start)
+        #print("root.g", root.g)
+        #print("root == start", root == self.start)
 
         if s != self.start:
-            print("successor wasn't the start")
+            #print("successor wasn't the start")
             tentativeRhs = edge.edgeCost + root.g
-            print("tentativeRhs", tentativeRhs)
-            print("edgeCost", edge.edgeCost)
+            #print("tentativeRhs", tentativeRhs)
+            #print("edgeCost", edge.edgeCost)
             if tentativeRhs < s.rhs:
                 s.rhs = tentativeRhs
+                s.cameFromIdx = (root.iX, root.iY)
+                s.cameFromCoord = (root.x, root.y)
 
+
+        # this line once stopped me from terminating
         for keyStatePair in self.U:
-            if keyStatePair == s:
+            #print("keystatepair", keyStatePair)
+            if keyStatePair[2] == s:
                 self.U.remove(keyStatePair)
-        
+            
         print("s.g", s.g)
         print("s.rhs", s.rhs)
         if s.g != s.rhs:
             self.stateId+=1
             heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
             print("enqueued onto U")
+        print("finished update vertex")
 
     def getSucc(self,u):
         # given a state, return the successors 
@@ -256,54 +266,62 @@ class LPASTAR:
         #print("self.succs", self.succs)
         return self.succs
 
+    def bestU(self):
+        if len(self.U) > 0:
+            return self.U[0][0]
+        else:
+            return [inf,inf]
+
     def ComputeShortestPath(self):
-        print("self.U", self.U)
-        print("self.U[0]", self.U[0])
-        while self.U[0][0] < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
+        #print("self.U", self.U)
+        #print("self.U[0]", self.U[0])
+        #while self.U[0][0] < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
+        while self.bestU() < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
+            print("self.U", self.U)
             u = heapq.heappop(self.U)[2]
-            print("u", u)
+            #print("u", u)
             if u.g > u.rhs:
                 print("first case")
                 u.g = u.rhs
                 self.succs = self.getSucc(u)
-                print("self.succs", self.succs)
+                #print("self.succs", self.succs)
                 for edge in self.succs:
                     self.UpdateVertex(edge)
                     self.motionE[edge] = edge
+                    #self.motionE[(edge.source_state, edge.target_state)] = edge
             else:
                 print("second case")
                 if u != self.start:
                     u.g = inf
                 self.succs = self.getSucc(u)
-                edgeU = Edge()
-                edgeU.source_state = u
-                edgeU.target_state = u      # {union of {16}}
-                edgeU.edgeCost = 0
+
+                #edgeU = Edge()
+                #edgeU.source_state = u
+                #edgeU.target_state = u      # {union of {16}}
+                #edgeU.edgeCost = 0
                 # actually appending this loops the algorithm forever 
                 # self.succs.append(edgeU)       # lets worry about this later
                 for edge in self.succs:
                     self.UpdateVertex(edge)
                     self.motionE[edge] = edge
+                    #self.motionE[(edge.source_state, edge.target_state)] = edge
 
     def Main(self):
         self.Initialize()
-        print("before compute shortest, self.start.g", self.start.g)
+        #print("before compute shortest, self.start.g", self.start.g)
         self.ComputeShortestPath()
-        # we dont need "cameFrom" labels on our vertex struct we have edges
-        solution1 = []
-        for candidateEdge in self.motionE:
-            if candidateEdge.target_state == self.goal:
-                stateOfInterest = candidateEdge.target_state
-                edgeOfInterest = candidateEdge
-                print("found the goal in the set of edges")
 
-        solution1.append(self.goal)
-        solution1.append(edgeOfInterest.source_state)
-        #while edgeOfInterest.source_state != self.start:
-        #    pass
-        # for all directed edges with changed edge costs
-        # update the edge costs c(u,v)
-        # UpdateVertex(v, root is u)
+        #print("goal came from idx", self.goal.cameFromIdx)
+        self.solution1 = []
+        stateOfInterest = self.goal
+
+        while stateOfInterest != self.start:
+            self.solution1.append(stateOfInterest.cameFromIdx)
+            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+        print("solution path", self.solution1)
+
+        # wait for changes in the edge costs
+
 
 class Visualizer:
     def __init__(self, planningInstance):
@@ -324,11 +342,14 @@ class Visualizer:
                 countX+=1
             countY +=1
 
+        for idx in self.planningInstance.solution1:
+            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
+            ax.add_patch(pathRect)
         startRect = patches.Rectangle((np.floor(self.planningInstance.start.iX),np.floor(self.yMax - self.planningInstance.start.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="c")
         ax.add_patch(startRect)
         goalRect = patches.Rectangle((np.floor(self.planningInstance.goal.iX),np.floor(self.yMax - self.planningInstance.goal.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="r")
         ax.add_patch(goalRect)
-
+            
         plt.title("A* Planning Instance")
         plt.xlim((0,50))
         plt.ylim((0,50))
@@ -338,7 +359,13 @@ class Visualizer:
 
 if __name__ == "__main__":
     LPA = LPASTAR()
-    LPA.readEnvironment("environment50_A_0.txt")
+    #LPA.readEnvironment("../test_environments/grid_envs_changing10/environment10_A_69.txt")
+    # using environment 50_A/B_95.txt
+    #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_A_65.txt")
+
+    # too slow to do this one
+    #LPA.readEnvironment("../test_environments/grid_envs1000/environment1000_0.txt")
+    LPA.readEnvironment("../snake.txt")
     LPA.convertGridToGraph()
     LPA.Main()
 
