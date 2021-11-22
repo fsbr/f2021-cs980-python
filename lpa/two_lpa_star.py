@@ -5,6 +5,40 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 inf = np.Inf
+class Visualizer:
+    def __init__(self, planningInstance):
+        print("Visualizer")
+        self.planningInstance = planningInstance
+        self.obsMap = planningInstance.obs
+        self.yMax = planningInstance.yMax
+
+    def plotMotionTree(self):
+        fig, ax = plt.subplots()
+        countY = 0
+        for i in self.obsMap:
+            countX = 0
+            for j in i:
+                if j == 1:
+                    rect = patches.Rectangle((np.floor(countX),np.floor(self.yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
+                    ax.add_patch(rect) 
+                countX+=1
+            countY +=1
+
+        for idx in self.planningInstance.solution1:
+            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
+            ax.add_patch(pathRect)
+        startRect = patches.Rectangle((np.floor(self.planningInstance.start.iX),np.floor(self.yMax - self.planningInstance.start.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="c")
+        ax.add_patch(startRect)
+        goalRect = patches.Rectangle((np.floor(self.planningInstance.goal.iX),np.floor(self.yMax - self.planningInstance.goal.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="r")
+        ax.add_patch(goalRect)
+            
+        plt.title("A* Planning Instance")
+        plt.xlim((0,50))
+        plt.ylim((0,50))
+        plt.axis("equal")
+        plt.grid()
+        plt.show()
+
 class State():
     def __init__(self):
         self.x = inf
@@ -250,6 +284,8 @@ class LPASTAR:
             
         print("s.g", s.g)
         print("s.rhs", s.rhs)
+
+        # this feels like a hack
         if s.g != s.rhs:
             self.stateId+=1
             heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
@@ -267,6 +303,7 @@ class LPASTAR:
         return self.succs
 
     def bestU(self):
+        # return the key in lex order unless the set is emtpy then return [inf, inf]
         if len(self.U) > 0:
             return self.U[0][0]
         else:
@@ -321,51 +358,21 @@ class LPASTAR:
         print("solution path", self.solution1)
 
         # wait for changes in the edge costs
+        # i force that, and then i do that cool XOR thing here
+        # then i smoosh that into bit*
 
 
-class Visualizer:
-    def __init__(self, planningInstance):
-        print("Visualizer")
-        self.planningInstance = planningInstance
-        self.obsMap = planningInstance.obs
-        self.yMax = planningInstance.yMax
-
-    def plotMotionTree(self):
-        fig, ax = plt.subplots()
-        countY = 0
-        for i in self.obsMap:
-            countX = 0
-            for j in i:
-                if j == 1:
-                    rect = patches.Rectangle((np.floor(countX),np.floor(self.yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
-                    ax.add_patch(rect) 
-                countX+=1
-            countY +=1
-
-        for idx in self.planningInstance.solution1:
-            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
-            ax.add_patch(pathRect)
-        startRect = patches.Rectangle((np.floor(self.planningInstance.start.iX),np.floor(self.yMax - self.planningInstance.start.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="c")
-        ax.add_patch(startRect)
-        goalRect = patches.Rectangle((np.floor(self.planningInstance.goal.iX),np.floor(self.yMax - self.planningInstance.goal.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="r")
-        ax.add_patch(goalRect)
-            
-        plt.title("A* Planning Instance")
-        plt.xlim((0,50))
-        plt.ylim((0,50))
-        plt.axis("equal")
-        plt.grid()
-        plt.show()
 
 if __name__ == "__main__":
     LPA = LPASTAR()
     #LPA.readEnvironment("../test_environments/grid_envs_changing10/environment10_A_69.txt")
     # using environment 50_A/B_95.txt
-    #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_A_65.txt")
+    #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_A_79.txt")
 
     # too slow to do this one
     #LPA.readEnvironment("../test_environments/grid_envs1000/environment1000_0.txt")
-    LPA.readEnvironment("../snake.txt")
+    #LPA.readEnvironment("../snake.txt")
+    LPA.readEnvironment("snake_B.txt")
     LPA.convertGridToGraph()
     LPA.Main()
 
