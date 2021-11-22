@@ -27,6 +27,9 @@ class Visualizer:
         for idx in self.planningInstance.solution1:
             pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
             ax.add_patch(pathRect)
+        for idx in self.planningInstance.solution2:
+            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="y")
+            ax.add_patch(pathRect)
         startRect = patches.Rectangle((np.floor(self.planningInstance.start.iX),np.floor(self.yMax - self.planningInstance.start.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="c")
         ax.add_patch(startRect)
         goalRect = patches.Rectangle((np.floor(self.planningInstance.goal.iX),np.floor(self.yMax - self.planningInstance.goal.iY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="r")
@@ -83,6 +86,9 @@ class LPASTAR:
 
         # tiebreak the heap in order that you enqueue stuff
         self.stateId = 0
+
+        # changed edges
+        self.changedEdges = []
 
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
@@ -198,7 +204,7 @@ class LPASTAR:
         cardinals = [(0, -1), (0, 1), (1, 0), (-1, 0)]
         #               NE      SE      NW      SW
         interCardinals = [(1,-1), (1, 1), (-1, -1), (-1, 1) ]
-        connectivity8 = cardinals + interCardinals
+        self.connectivity8 = cardinals + interCardinals
 
         # i think want to iterate over every cell in the grid, then add the state to V
         # and add its edges as neighbors in E
@@ -226,7 +232,7 @@ class LPASTAR:
             xIdx = vertex.iX
             yIdx = vertex.iY
             #print("a new vertex")
-            for direction in connectivity8:
+            for direction in self.connectivity8:
                 stepX = xIdx + direction[0]
                 stepY = yIdx + direction[1]
                 # if im inbounds
@@ -243,7 +249,8 @@ class LPASTAR:
                         edgeToAdd.edgeCost = inf
                     else:
                         edgeToAdd.edgeCost = self.calcDist(vertex, targetVertex)
-                    self.E[edgeToAdd] = edgeToAdd
+                    #self.E[edgeToAdd] = edgeToAdd
+                    self.E[(xIdx, yIdx), (stepX, stepY)] = edgeToAdd
         print("goal in ", self.goal in self.V)
         print("start in", self.start in self.V)
 
@@ -268,11 +275,34 @@ class LPASTAR:
         print(self.changedMap)
         print("changed Indices List", changedIndices)
 
-        # so this just gives me every location that has changed, but it doesn't give the changed edge costs
+        for index in changedIndices:
+            print(self.V[index])
+            for direction in self.connectivity8:
+                stepX = index[0] + direction[0]
+                stepY = index[1] + direction[1]
 
-
-
-
+                # if im inbounds
+                if (0 <= stepX <= self.xMax -1) and (0<= stepY <= self.yMax -1): 
+                    #print("can i access an edge this way?", self.E[(index, (stepX, stepY))])
+                    #print("can i access an edge this other  way?", self.E[((stepX, stepY), index)])
+                    edge = self.E[(index, (stepX, stepY))]
+                    reversedEdge = self.E[((stepX, stepY), index)]
+                    
+                    sourceIsObs = self.obs[index[1]][index[0]] == 1
+                    targetIsObs = self.obs[stepY][stepX] == 1
+                    if sourceIsObs or targetIsObs:
+                        edge.edgeCost = inf
+                        reversedEdge.edgeCost = inf
+                        reversedEdge.target_state.cameFromIdx = ()
+                        edge.target_state.cameFromIdx = ()
+                    else:
+                        edge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
+                        reversedEdge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
+                        # reversing snake b and a didnt work
+                        edge.target_state.cameFromIdx = ()
+                        reversedEdge.target_state.cameFromIdx = ()
+                    self.changedEdges.append(edge)
+                    self.changedEdges.append(reversedEdge)
 
     def CalculateKey(self, state):                                                                           
         # put that shit right on the state, then this function is easy                                       
@@ -329,7 +359,9 @@ class LPASTAR:
     def getSucc(self,u):
         # given a state, return the successors 
         self.succs = []
-        for edge in list(self.E):
+        for key, edge in self.E.items():
+            print("key", key)
+            print("edge", edge)
             if edge.source_state == u:
                 self.succs.append(edge)
                 #print("succs.edgeCost", edge.edgeCost)
@@ -391,6 +423,7 @@ class LPASTAR:
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
         print("solution path", self.solution1)
 
+        #self.solution2 = self.solution1
 
         # when i do this, it shows the solution of A, on the map of B
         LPA.readEnvironment("snake_B.txt", True)
@@ -398,9 +431,26 @@ class LPASTAR:
 
         #for all directed edges with changed edge costs
         #update the edge costs c(u,v)
-        #LPA.updateEdgeCosts()
+        LPA.updateEdgeCosts()
         # updatevertex(v, with root u)
 
+        for edge in self.changedEdges:
+            # updating costs 
+            print("updating vertex")
+            self.UpdateVertex(edge)
+
+        # u need to recompute the shortest path when the map changes
+        self.ComputeShortestPath()
+        self.solution2 = []
+        stateOfInterest = self.goal
+
+        howManyStates = 0
+        while stateOfInterest != self.start:
+            self.solution2.append(stateOfInterest.cameFromIdx)
+            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            howManyStates+=1
+            print(howManyStates)
+        print("solution path", self.solution2)
         # then smoosh that thing into bit*
 
 
