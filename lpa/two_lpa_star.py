@@ -14,6 +14,10 @@ class Visualizer:
 
     def plotMotionTree(self):
         fig, ax = plt.subplots()
+
+        for idx in self.planningInstance.solution1:
+            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
+            ax.add_patch(pathRect)
         countY = 0
         for i in self.obsMap:
             countX = 0
@@ -24,9 +28,6 @@ class Visualizer:
                 countX+=1
             countY +=1
 
-        for idx in self.planningInstance.solution1:
-            pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="m")
-            ax.add_patch(pathRect)
         for idx in self.planningInstance.solution2:
             pathRect = patches.Rectangle((np.floor(idx[0]),np.floor(self.yMax - idx[1]-1)), 1,1, linewidth=1, edgecolor="k",facecolor="y")
             ax.add_patch(pathRect)
@@ -106,7 +107,7 @@ class LPASTAR:
     def convertToCoordinate(self, xIdx, yIdx):
         return "unfinished function"
 
-    def readEnvironment(self, envFile,updated = False):
+    def readEnvironment(self, envFile, updated = False):
         self.envFileList.append(envFile)
         A = []
         f = open(envFile)
@@ -188,7 +189,9 @@ class LPASTAR:
             self.goal.iX = sX
             self.goal.iY = gY
         else:
+            print("I SET SELF.OBS 2") 
             self.obs2 = self.obs
+            print(self.obs2)
 
 
     def convertGridToGraph(self):
@@ -245,7 +248,8 @@ class LPASTAR:
                     #    if targetVertex.iX == stepX and targetVertex.iY == stepY:
                     targetVertex = self.V[(stepX, stepY)]
                     edgeToAdd.target_state = targetVertex
-                    if self.obs[stepY][stepX] == 1:
+                    
+                    if self.obs[stepY][stepX] ==1 or self.obs[yIdx][xIdx] == 1:
                         edgeToAdd.edgeCost = inf
                     else:
                         edgeToAdd.edgeCost = self.calcDist(vertex, targetVertex)
@@ -263,7 +267,7 @@ class LPASTAR:
             for x in range(self.xMax):
                 # obstacle changed, was added
                 candidateTuple = [False, False] 
-                candidateTuple[0] = bool(self.obs1[y][x]) ^ bool(self.obs2[y][x]) 
+                candidateTuple[0] = bool(self.obs1[y][x]) ^ bool(self.obs2[y][x])  # i had ^ here before
                 if candidateTuple[0] == True:
                     changedIndices.append((x,y)) 
                 if self.obs1[y][x] == 1:
@@ -271,7 +275,7 @@ class LPASTAR:
                 else:
                     candidateTuple[1] = True
                 self.changedMap[y][x] = candidateTuple            
-        print("uncomment the line below me to see the actual map")
+        print(" 69 uncomment the line below me to see the actual map")
         print(self.changedMap)
         print("changed Indices List", changedIndices)
 
@@ -290,17 +294,16 @@ class LPASTAR:
                     
                     sourceIsObs = self.obs[index[1]][index[0]] == 1
                     targetIsObs = self.obs[stepY][stepX] == 1
-                    if sourceIsObs or targetIsObs:
+
+                    if sourceIsObs:
                         edge.edgeCost = inf
                         reversedEdge.edgeCost = inf
-                        reversedEdge.target_state.cameFromIdx = ()
-                        edge.target_state.cameFromIdx = ()
+                    elif targetIsObs:
+                        edge.edgeCost = inf
+                        reversedEdge.edgeCost = inf
                     else:
                         edge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
                         reversedEdge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
-                        # reversing snake b and a didnt work
-                        edge.target_state.cameFromIdx = ()
-                        reversedEdge.target_state.cameFromIdx = ()
                     self.changedEdges.append(edge)
                     self.changedEdges.append(reversedEdge)
 
@@ -324,32 +327,66 @@ class LPASTAR:
         heapq.heappush(self.U, (startKey,self.stateId, startState)) # {05}
 
     def UpdateVertex(self, edge):
+        # my s is his u
         s = edge.target_state
         root = edge.source_state
         #print("root.g", root.g)
         #print("root == start", root == self.start)
 
-        if s != self.start:
-            #print("successor wasn't the start")
-            tentativeRhs = edge.edgeCost + root.g
-            #print("tentativeRhs", tentativeRhs)
-            #print("edgeCost", edge.edgeCost)
-            if tentativeRhs < s.rhs:
-                s.rhs = tentativeRhs
-                s.cameFromIdx = (root.iX, root.iY)
-                s.cameFromCoord = (root.x, root.y)
+        # this if s!=self.start is a hack!! :]
+        #if s != self.start:
+        #    #print("successor wasn't the start")
+        #    tentativeRhs = edge.edgeCost + root.g
+        #    #print("tentativeRhs", tentativeRhs)
+        #    #print("edgeCost", edge.edgeCost)
+        #    if tentativeRhs < s.rhs:
+        #        s.rhs = tentativeRhs
+        #        s.cameFromIdx = (root.iX, root.iY)
+        #        s.cameFromCoord = (root.x, root.y)
 
+        rhsList = []
+        cameFromIdxList = []
+        cameFromCoordList = []
+        preds = self.getPred(s)
+        for predecessor in preds:
+            # the thing in preds is an edge
+            # print("predecessor", predecessor) 
+            #if s == self.start:
+            #    s.rhs = 0
+            #    s.cameFromIdx = ()
+            #    s.cameFromCoordList = None
+            #else:
+            if s == self.goal:
+                print("DOING RHS FOR GOAL")
+            print("predecessor.edgeCost", predecessor.edgeCost)
+            print("pred.source_state.g", predecessor.source_state.g)
+            tentativeRhs = predecessor.edgeCost + predecessor.source_state.g
+            rhsList.append(tentativeRhs)
+            cameFromIdxList.append((predecessor.source_state.iX, predecessor.source_state.iY))
+            cameFromCoordList.append((predecessor.source_state.x, predecessor.source_state.y))
+
+        if s != self.start:
+            minRhs = min(rhsList)
+            print("min Rhs", minRhs)
+            print("from rhsList", rhsList)
+            min_index = rhsList.index(minRhs)
+            print("min index", min_index)
+            print("cameFromIdxList", cameFromIdxList)
+            s.rhs = minRhs
+            #s.g = inf
+            s.cameFromIdx = cameFromIdxList[min_index]
+            s.cameFromCoordList = cameFromCoordList[min_index]
+        else:   #s must be the start
+            s.rhs = 0
 
         # this line once stopped me from terminating
         for keyStatePair in self.U:
             #print("keystatepair", keyStatePair)
             if keyStatePair[2] == s:
                 self.U.remove(keyStatePair)
-            
         print("s.g", s.g)
         print("s.rhs", s.rhs)
 
-        # this feels like a hack
         if s.g != s.rhs:
             self.stateId+=1
             heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
@@ -360,21 +397,31 @@ class LPASTAR:
         # given a state, return the successors 
         self.succs = []
         for key, edge in self.E.items():
-            print("key", key)
-            print("edge", edge)
+            # only print these for debugging it makes everythin really slow
+            #print("key", key)
+            #print("edge", edge)
             if edge.source_state == u:
                 self.succs.append(edge)
                 #print("succs.edgeCost", edge.edgeCost)
         #print("self.succs", self.succs)
         return self.succs
 
+    def getPred(self,u):
+        self.succs = []
+        for key, edge in self.E.items():
+            if edge.target_state == u:
+                self.succs.append(edge)
+                #print("succs.edgeCost", edge.edgeCost)
+        #print("self.succs", self.succs)
+        return self.succs
+
+
     def bestU(self):
         # return the key in lex order unless the set is emtpy then return [inf, inf]
         if len(self.U) > 0:
             return self.U[0][0]
         else:
-            return [inf,inf]
-
+            return [inf,inf] 
     def ComputeShortestPath(self):
         #print("self.U", self.U)
         #print("self.U[0]", self.U[0])
@@ -412,34 +459,31 @@ class LPASTAR:
     def Main(self):
         self.Initialize()
         #print("before compute shortest, self.start.g", self.start.g)
-        self.ComputeShortestPath()
 
-        #print("goal came from idx", self.goal.cameFromIdx)
+        self.ComputeShortestPath()
         self.solution1 = []
         stateOfInterest = self.goal
-
         while stateOfInterest != self.start:
             self.solution1.append(stateOfInterest.cameFromIdx)
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
-        print("solution path", self.solution1)
+        print("solution path 1", self.solution1)
 
         #self.solution2 = self.solution1
 
-        # when i do this, it shows the solution of A, on the map of B
-        LPA.readEnvironment("snake_B.txt", True)
+        LPA.readEnvironment(fileList[1], True)
         LPA.convertGridToGraph()
 
-        #for all directed edges with changed edge costs
-        #update the edge costs c(u,v)
+        ##for all directed edges with changed edge costs
+        ##update the edge costs c(u,v)
         LPA.updateEdgeCosts()
         # updatevertex(v, with root u)
 
         for edge in self.changedEdges:
             # updating costs 
-            print("updating vertex")
+            print("updating vertex because the map changed")
             self.UpdateVertex(edge)
 
-        # u need to recompute the shortest path when the map changes
+        ## u need to recompute the shortest path when the map changes
         self.ComputeShortestPath()
         self.solution2 = []
         stateOfInterest = self.goal
@@ -449,8 +493,13 @@ class LPASTAR:
             self.solution2.append(stateOfInterest.cameFromIdx)
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
             howManyStates+=1
-            print(howManyStates)
-        print("solution path", self.solution2)
+            print("how Many States", howManyStates)
+            print("stateOfInterest xi " +  str(stateOfInterest.iX) + " yi " + str(stateOfInterest.iY) )
+            print("stateOfInterest x " +  str(stateOfInterest.x) + " y " + str(stateOfInterest.y) )
+            
+            print("where it came from" +  str(stateOfInterest.cameFromIdx) )
+            print("where it came from is the start?" + str(stateOfInterest == self.start))
+        print("solution path 2", self.solution2)
         # then smoosh that thing into bit*
 
 
@@ -459,15 +508,37 @@ if __name__ == "__main__":
     LPA = LPASTAR()
     #LPA.readEnvironment("../test_environments/grid_envs_changing10/environment10_A_69.txt")
     # using environment 50_A/B_95.txt
-    #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_A_79.txt")
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_16.txt","../test_environments/grid_envs_changing/environment50_A_16.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_16.txt","../test_environments/grid_envs_changing/environment50_B_16.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_42.txt","../test_environments/grid_envs_changing/environment50_B_42.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_42.txt","../test_environments/grid_envs_changing/environment50_A_42.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_59.txt","../test_environments/grid_envs_changing/environment50_A_59.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_59.txt","../test_environments/grid_envs_changing/environment50_B_59.txt"]
+    #fileList = ["snake_A.txt", "snake_B.txt"]
+    #fileList = ["snake_B.txt", "snake_A.txt"]
+    #fileList = ["snake_A.txt", "snake_C.txt"]
+    fileList = ["snake_A.txt", "snake_D.txt"]
+    #fileList = ["snake_D.txt", "snake_A.txt"]
+    #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_B_16.txt")
+    LPA.readEnvironment(fileList[0])
 
     # too slow to do this one
     #LPA.readEnvironment("../test_environments/grid_envs1000/environment1000_0.txt")
     #LPA.readEnvironment("../snake.txt")
-    LPA.readEnvironment("snake_A.txt")
+    #LPA.readEnvironment("snake_B.txt")
     LPA.convertGridToGraph()
+    print("CALLING MAIN")
     LPA.Main()
-
+    for key, edge in LPA.E.items():
+        if edge.target_state == LPA.V[(6,0)]:
+            
+            print("INCOMING TO PROBLEM VERTEX")
+            print("g 6,0", edge.source_state.g)
+            print("rhs 6,0", edge.source_state.rhs)
+        if edge.source_state == LPA.V[(6,0)]:
+            print("OUTGOING FROM PROBLEM VERTEX")
+            print("g source  6,0", edge.target_state.g)
+            print("rhs 6,0", edge.target_state.rhs)
     gv = Visualizer(LPA)
     gv.plotMotionTree()
 
