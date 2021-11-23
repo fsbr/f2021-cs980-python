@@ -514,10 +514,10 @@ if __name__ == "__main__":
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_42.txt","../test_environments/grid_envs_changing/environment50_A_42.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_59.txt","../test_environments/grid_envs_changing/environment50_A_59.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_59.txt","../test_environments/grid_envs_changing/environment50_B_59.txt"]
-    #fileList = ["snake_A.txt", "snake_B.txt"]
+    fileList = ["snake_A.txt", "snake_B.txt"]
     #fileList = ["snake_B.txt", "snake_A.txt"]
     #fileList = ["snake_A.txt", "snake_C.txt"]
-    fileList = ["snake_A.txt", "snake_D.txt"]
+    #fileList = ["snake_A.txt", "snake_D.txt"]
     #fileList = ["snake_D.txt", "snake_A.txt"]
     #LPA.readEnvironment("../test_environments/grid_envs_changing/environment50_B_16.txt")
     LPA.readEnvironment(fileList[0])

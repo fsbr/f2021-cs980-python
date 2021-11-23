@@ -1,4 +1,4 @@
-# giving in
+# modifying this algorithm.... (how?)
 import sys,os
 import numpy as np
 import matplotlib.pyplot as plt
