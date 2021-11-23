@@ -26,7 +26,6 @@ class State:
         self.hHat = inf
         self.gHat = inf
         self.fHat = inf 
-        
 
 class Edge:
     def __init__(self):
@@ -67,6 +66,10 @@ class BIT_STAR:
         # the vertex and edges need to be dictionary
         self.V = {} 
         self.E = {}                                                     # A1.1
+
+        self.oldV = []
+        self.oldE = []
+
         self.Vold = {}
         self.Xsamples = {}
         self.Xnear = {}
@@ -80,8 +83,8 @@ class BIT_STAR:
         self.QvCount = 0
 
         # solution cost
-        #self.c = inf
-        self.c = 9999
+        self.c = inf
+        #self.c = 9999
 
         # DEBUG PARAMS
         # temporarily run the while loop
@@ -742,7 +745,8 @@ class BIT_STAR:
 
                             ##print("FINAL tmpCost", tmpCost)
                             if tmpCost < self.c:
-
+                                self.oldE.append(self.E)
+                                self.oldV.append(self.V)
                                 # have to also attach the new cost to the goal state i think?
                                 self.c = tmpCost
                                 self.goal.gT = self.c
@@ -778,7 +782,7 @@ class Visualizer:
     def __init__(self):
         print("Visualizer")
 
-    def plotMotionTree(self,V,E,obsMap,xMax, yMax, samples, start, goal):
+    def plotMotionTree(self,V,E,obsMap,xMax, yMax, samples, start, goal, oldEdges):
         fig, ax = plt.subplots()
         print("Plotting the Motion Tree")
         startX = start.x
@@ -787,6 +791,7 @@ class Visualizer:
         goalY = goal.y
         plt.plot(startX,startY, "go", markersize=10)
         plt.plot(goalX,goalY, "ro", markersize=10)
+
         xVec = []
         yVec = []
         for edge in E:
@@ -802,8 +807,23 @@ class Visualizer:
         #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
         #ax.add_patch(rect)
 
-        xSolution = []
-        ySolution = []
+        xVec = []
+        yVec = []
+        #for tree in oldEdges:
+        #    for edge in tree:
+        #        xVec.append(edge.source_state.x)
+        #        xVec.append(edge.target_state.x)
+        #        yVec.append(edge.source_state.y)
+        #        yVec.append(edge.target_state.y)
+        #        #ax.plot(xVec, yVec, "r-x")
+        #        ax.plot(xVec, yVec, "-", color="#A832A4")
+        #        #ax.plot(xVec,yVec, "r")
+        #        xVec = []
+        #        yVec = []
+
+        #    # is this used?
+        #    xSolution = []
+        #    ySolution = []
         # find goal
         
         xSampleVector = []
@@ -925,7 +945,7 @@ if __name__ == "__main__":
         print("y", i.y)
 
     gv = Visualizer()
-    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal)
+    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     #print(BS.tmpWhileVector)
