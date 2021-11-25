@@ -50,6 +50,7 @@ class State():
         self.g = inf
         self.h = inf
         self.rhs = inf
+        self.f = inf
 
         self.iX = inf
         self.iY = inf
@@ -220,7 +221,10 @@ class LPASTAR:
                 if (stateToAdd != self.start) or (stateToAdd !=self.goal):
                     stateToAdd.x = xIdx - 0.5
                     stateToAdd.y = self.yMax - yIdx + 0.5
-                    stateToAdd.h = self.calcDist(stateToAdd, self.goal)
+                    #stateToAdd.h = self.calcDist(stateToAdd, self.goal)
+
+                    # the heuristic is wrt to the start?!?! (in d*
+                    stateToAdd.h = self.calcDist(stateToAdd, self.start)
                     #self.V[stateToAdd] = stateToAdd
                     #making my life easier
                     stateToAdd.iX = xIdx
@@ -280,7 +284,7 @@ class LPASTAR:
         print("changed Indices List", changedIndices)
 
         for index in changedIndices:
-            print(self.V[index])
+            #print(self.V[index])
             for direction in self.connectivity8:
                 stepX = index[0] + direction[0]
                 stepY = index[1] + direction[1]
@@ -295,12 +299,13 @@ class LPASTAR:
                     sourceIsObs = self.obs[index[1]][index[0]] == 1
                     targetIsObs = self.obs[stepY][stepX] == 1
 
-                    if sourceIsObs:
+                    if self.obs[index[1]][index[0]] == 1 or self.obs[stepY][stepX]:
+                    #if sourceIsObs or targetIsObs:
                         edge.edgeCost = inf
                         reversedEdge.edgeCost = inf
-                    elif targetIsObs:
-                        edge.edgeCost = inf
-                        reversedEdge.edgeCost = inf
+                    #elif targetIsObs:
+                    #    edge.edgeCost = inf
+                    #    reversedEdge.edgeCost = inf
                     else:
                         edge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
                         reversedEdge.edgeCost = self.calcDist(edge.source_state, edge.target_state) 
@@ -326,10 +331,14 @@ class LPASTAR:
         self.stateId += 1 
         heapq.heappush(self.U, (startKey,self.stateId, startState)) # {05}
 
-    def UpdateVertex(self, edge):
+    #def UpdateLaggingState(self):
+    #    if self.utransfer != self.start:
+    #        preds = self.getPred(self.utransfer) 
+    def UpdateVertex(self, edge, secondCase = False):
         # my s is his u
         s = edge.target_state
         root = edge.source_state
+
         #print("root.g", root.g)
         #print("root == start", root == self.start)
 
@@ -348,23 +357,32 @@ class LPASTAR:
         cameFromIdxList = []
         cameFromCoordList = []
         preds = self.getPred(s)
-        for predecessor in preds:
-            # the thing in preds is an edge
-            # print("predecessor", predecessor) 
-            #if s == self.start:
-            #    s.rhs = 0
-            #    s.cameFromIdx = ()
-            #    s.cameFromCoordList = None
-            #else:
-            if s == self.goal:
-                print("DOING RHS FOR GOAL")
-            print("predecessor.edgeCost", predecessor.edgeCost)
-            print("pred.source_state.g", predecessor.source_state.g)
-            tentativeRhs = predecessor.edgeCost + predecessor.source_state.g
-            rhsList.append(tentativeRhs)
-            cameFromIdxList.append((predecessor.source_state.iX, predecessor.source_state.iY))
-            cameFromCoordList.append((predecessor.source_state.x, predecessor.source_state.y))
 
+        #if secondCase == True:
+        #    upreds = self.getPred(self.utransfer)
+        #    
+        #    print("upreds", upreds)
+        #    print("preds before", preds)
+        #    #preds.append(upreds)
+        #    preds = preds + upreds
+        #print("preds after", preds)
+
+        for pred in preds:
+            #print(pred)
+            #if pred.target_state !=  self.start:
+            tentativeRhs = pred.edgeCost + pred.source_state.g
+            rhsList.append( tentativeRhs )
+            cameFromIdxList.append( (pred.source_state.iX, pred.source_state.iY) )
+            #cameFromIdxList.append( (s.iX, s.iY) )
+            #if s == self.goal:
+            #    print("DOING RHS FOR GOAL")
+            #print("predecessor.edgeCost", predecessor.edgeCost)
+            #print("pred.source_state.g", predecessor.source_state.g)
+            #tentativeRhs = predecessor.edgeCost + predecessor.source_state.g
+            #rhsList.append(tentativeRhs)
+            #cameFromIdxList.append((predecessor.source_state.iX, predecessor.source_state.iY))
+            #cameFromCoordList.append((predecessor.source_state.x, predecessor.source_state.y))
+                
         if s != self.start:
             minRhs = min(rhsList)
             print("min Rhs", minRhs)
@@ -373,19 +391,22 @@ class LPASTAR:
             print("min index", min_index)
             print("cameFromIdxList", cameFromIdxList)
             s.rhs = minRhs
+            s.f = s.rhs + s.h
             #s.g = inf
             s.cameFromIdx = cameFromIdxList[min_index]
-            s.cameFromCoordList = cameFromCoordList[min_index]
+            #s.cameFromCoordList = cameFromCoordList[min_index]
         else:   #s must be the start
             s.rhs = 0
 
         # this line once stopped me from terminating
         for keyStatePair in self.U:
             #print("keystatepair", keyStatePair)
+            #print("keystatepair[2]", keyStatePair[2])
             if keyStatePair[2] == s:
                 self.U.remove(keyStatePair)
         print("s.g", s.g)
         print("s.rhs", s.rhs)
+        print("s.camefrom", s.cameFromIdx)
 
         if s.g != s.rhs:
             self.stateId+=1
@@ -427,7 +448,7 @@ class LPASTAR:
         #print("self.U[0]", self.U[0])
         #while self.U[0][0] < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
         while self.bestU() < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
-            print("self.U", self.U)
+            #print("self.U", self.U)
             u = heapq.heappop(self.U)[2]
             #print("u", u)
             if u.g > u.rhs:
@@ -436,7 +457,7 @@ class LPASTAR:
                 self.succs = self.getSucc(u)
                 #print("self.succs", self.succs)
                 for edge in self.succs:
-                    self.UpdateVertex(edge)
+                    self.UpdateVertex(edge, True)
                     self.motionE[edge] = edge
                     #self.motionE[(edge.source_state, edge.target_state)] = edge
             else:
@@ -451,8 +472,10 @@ class LPASTAR:
                 #edgeU.edgeCost = 0
                 # actually appending this loops the algorithm forever 
                 # self.succs.append(edgeU)       # lets worry about this later
+                self.utransfer = u
                 for edge in self.succs:
-                    self.UpdateVertex(edge)
+                    
+                    self.UpdateVertex(edge, True)
                     self.motionE[edge] = edge
                     #self.motionE[(edge.source_state, edge.target_state)] = edge
 
@@ -466,6 +489,7 @@ class LPASTAR:
         while stateOfInterest != self.start:
             self.solution1.append(stateOfInterest.cameFromIdx)
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            print("i am stuck in the first solution path :[")
         print("solution path 1", self.solution1)
 
         #self.solution2 = self.solution1
@@ -482,6 +506,7 @@ class LPASTAR:
             # updating costs 
             print("updating vertex because the map changed")
             self.UpdateVertex(edge)
+        print("before the second compute shortest")
 
         ## u need to recompute the shortest path when the map changes
         self.ComputeShortestPath()
@@ -509,12 +534,12 @@ if __name__ == "__main__":
     #LPA.readEnvironment("../test_environments/grid_envs_changing10/environment10_A_69.txt")
     # using environment 50_A/B_95.txt
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_16.txt","../test_environments/grid_envs_changing/environment50_A_16.txt"]
-    #fileList = ["../test_environments/grid_envs_changing/environment50_A_16.txt","../test_environments/grid_envs_changing/environment50_B_16.txt"]
+    fileList = ["../test_environments/grid_envs_changing/environment50_A_16.txt","../test_environments/grid_envs_changing/environment50_B_16.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_42.txt","../test_environments/grid_envs_changing/environment50_B_42.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_42.txt","../test_environments/grid_envs_changing/environment50_A_42.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_59.txt","../test_environments/grid_envs_changing/environment50_A_59.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_59.txt","../test_environments/grid_envs_changing/environment50_B_59.txt"]
-    fileList = ["snake_A.txt", "snake_B.txt"]
+    #fileList = ["snake_A.txt", "snake_B.txt"]
     #fileList = ["snake_B.txt", "snake_A.txt"]
     #fileList = ["snake_A.txt", "snake_C.txt"]
     #fileList = ["snake_A.txt", "snake_D.txt"]
