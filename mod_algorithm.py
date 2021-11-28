@@ -98,8 +98,11 @@ class BIT_STAR:
         self.cVector = []
         self.tmpWhileVector = []
         self.timeVector = []
+
+        #dynamic environment
+        self.environmentUpdated = False
     
-    def readEnvironment(self, envFile):
+    def readEnvironment(self, envFile, updated = False):
         A = []
         f = open(envFile)
         for x in f:
@@ -118,26 +121,34 @@ class BIT_STAR:
                     self.obs[j][i] = 0
                 else:
                     self.obs[j][i] = 1
-        print("self.obs")
-        print(self.obs)
-        self.start.x = float(A[2+self.yMax])
-        self.start.y = float(A[3+self.yMax])
-        self.goal.x = float(A[4+self.yMax])
-        self.goal.y = float(A[5+self.yMax])
+        
+        if updated == False:
+            self.obs1 = self.obs
+            print("self.obs")
+            print(self.obs)
+            # our program has an 
+            self.start.x = float(A[2+self.yMax])
+            self.start.y = float(A[3+self.yMax])
+            self.goal.x = float(A[4+self.yMax])
+            self.goal.y = float(A[5+self.yMax])
 
-        print(self.start.x)
-        print(self.start.y)
-        print(self.goal.x)
-        print(self.goal.y)
-        self.start.gHat = 0
-        self.start.hHat = self.calcDist(self.start,self.goal)
-        self.start.fHat = self.start.gHat + self.start.hHat
+            print(self.start.x)
+            print(self.start.y)
+            print(self.goal.x)
+            print(self.goal.y)
+            self.start.gHat = 0
+            self.start.hHat = self.calcDist(self.start,self.goal)
+            self.start.fHat = self.start.gHat + self.start.hHat
 
-        self.goal.gHat = self.calcDist(self.start, self.goal)
-        self.goal.hHat = 0
-        self.goal.fHat = self.goal.gHat + self.goal.hHat
-        print("ENVIRONMENT READING fHat goal", self.start.fHat)
-        print("ENVIRONMENT READING fHat goal", self.goal.fHat)
+            self.goal.gHat = self.calcDist(self.start, self.goal)
+            self.goal.hHat = 0
+            self.goal.fHat = self.goal.gHat + self.goal.hHat
+            print("ENVIRONMENT READING fHat goal", self.start.fHat)
+            print("ENVIRONMENT READING fHat goal", self.goal.fHat)
+        else:
+            print("I SET SELF.OBS 2")
+            self.obs2 = self.obs
+
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
     
@@ -564,7 +575,7 @@ class BIT_STAR:
                 nearestTreeCounter+=1
                 ##print("in loop nearestTreeCounter", nearestTreeCounter)
 
-    def BIT_STAR_MAIN(self, startTime, stopTime):
+    def BIT_STAR_MAIN(self, startTime, stopTime, mode = "replan") :
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
@@ -572,20 +583,22 @@ class BIT_STAR:
         while time.time() < stopTime:
         #while True:
             # i think each iteration of this we dump the motion tree
-            ##print("LINE A1.4 CHECK")
+            print("LINE A1.4 CHECK")
             #print("Qe Size" + str(len(self.Qe)) + "Qv Size" + str(len(self.Qv)))
 
             # THIS IS A HACK NOT PART OF THE ALGORITHM
             #if (len(self.Xsamples) == 0):
             #    self.Sample()
             if (len(self.Qe) == 0 and len(self.Qv) == 0):                   # A1.4
-                ##print("LINE A1.5")
+                print("LINE A1.5")
                 ##print("prune")                                              # A1.5 
                 self.Prune()
 
-                #Xsamples = self.Sample()                                    # A1.6
-                self.Xsamples = self.Sample()
+                print("LINE A1.6")
+                self.Xsamples = self.Sample()                               # A1.6
                 ##print("A1.6, length of Xsamples", len(self.Xsamples))
+
+                print("LINE A1.7")
                 self.Vold = self.V.copy()                                          # A1.7
                 ##print("self.Vold == self.V", self.Vold == self.V)
 
@@ -617,7 +630,7 @@ class BIT_STAR:
             ##print("qe bqv", self.bestQueueValue(self.Qe))
 
             while self.bestQueueValue(self.Qv) <= self.bestQueueValue(self.Qe): # A1.10
-                ##print("getting to expand next vertex")
+                print("getting to expand next vertex")
                 self.ExpandVertex2()                                         # A1.11
 
             #if len(self.Qe) > 0:
@@ -776,6 +789,28 @@ class BIT_STAR:
                 self.Qe = []                                                    #A1.25
                 self.Qv = []                                                    #A1.25
             ##print("SELF.tmpWhile", self.tmpWhile)
+            print("time.time() - t_end", t_end - time.time())
+            if t_end - time.time() <=   test_length/2 and self.environmentUpdated == False:
+                # half way thru we will read in the B version of the environment
+                self.readEnvironment(fileList[1], updated = True)
+                self.environmentUpdated = True
+                # clear the motion tree
+                if mode == "replan":
+                    self.V = {}
+                    self.E = {}
+                    self.Xsamples = {} 
+
+                    # reset goal parameters
+                    self.goal.gT = inf
+                    self.c = inf
+
+                    # reset it to the initial conditions
+                    self.V[self.start] = self.start  
+                    self.Xsamples[self.goal] = self.goal
+                    self.Qe = []
+                    self.Qv = []
+                    # i think i have to move the goal.gT as well...
+            #print("broke out") 
         return self.V, self.E 
 
 class Visualizer:
@@ -911,7 +946,16 @@ if __name__ == "__main__":
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+
+    # for changing environments
+    #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
+    #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
+
+    # instance 7 is interesting
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    BS.readEnvironment(fileList[0], False)
+    #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment104.txt")
@@ -940,9 +984,9 @@ if __name__ == "__main__":
     print(E)
     print(len(E))
     print(BS.obs)
-    for i in V:
-        print("x", i.x)
-        print("y", i.y)
+    #for i in V:
+    #    print("x", i.x)
+    #    print("y", i.y)
 
     gv = Visualizer()
     gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)

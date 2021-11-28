@@ -209,6 +209,7 @@ class LPASTAR:
         #               NE      SE      NW      SW
         interCardinals = [(1,-1), (1, 1), (-1, -1), (-1, 1) ]
         self.connectivity8 = cardinals + interCardinals
+        #self.connectivity8 = #interCardinals
 
         # i think want to iterate over every cell in the grid, then add the state to V
         # and add its edges as neighbors in E
@@ -488,7 +489,13 @@ class LPASTAR:
         stateOfInterest = self.goal
         while stateOfInterest != self.start:
             self.solution1.append(stateOfInterest.cameFromIdx)
-            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            try: 
+                stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            except KeyError:
+                print("NO PATH FOUND")
+                self.solution1 = [(self.start.iX, self.start.iY)]
+                self.solution1.append( (self.goal.iX, self.goal.iY))
+                break
             print("i am stuck in the first solution path :[")
         print("solution path 1", self.solution1)
 
@@ -516,7 +523,12 @@ class LPASTAR:
         howManyStates = 0
         while stateOfInterest != self.start:
             self.solution2.append(stateOfInterest.cameFromIdx)
-            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            try:
+                stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            except KeyError:
+                print("NO PATH FOUND")
+                self.solution2 = [ (self.start.iX, self.start.iY) ]
+                self.solution2.append( (self.goal.iX, self.goal.iY))
             howManyStates+=1
             print("how Many States", howManyStates)
             print("stateOfInterest xi " +  str(stateOfInterest.iX) + " yi " + str(stateOfInterest.iY) )
@@ -534,11 +546,25 @@ if __name__ == "__main__":
     #LPA.readEnvironment("../test_environments/grid_envs_changing10/environment10_A_69.txt")
     # using environment 50_A/B_95.txt
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_16.txt","../test_environments/grid_envs_changing/environment50_A_16.txt"]
-    fileList = ["../test_environments/grid_envs_changing/environment50_A_16.txt","../test_environments/grid_envs_changing/environment50_B_16.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_16.txt","../test_environments/grid_envs_changing/environment50_B_16.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_42.txt","../test_environments/grid_envs_changing/environment50_B_42.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_42.txt","../test_environments/grid_envs_changing/environment50_A_42.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_59.txt","../test_environments/grid_envs_changing/environment50_A_59.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_59.txt","../test_environments/grid_envs_changing/environment50_B_59.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_73.txt","../test_environments/grid_envs_changing/environment50_B_73.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_73.txt","../test_environments/grid_envs_changing/environment50_A_73.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_98.txt","../test_environments/grid_envs_changing/environment50_B_98.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_98.txt","../test_environments/grid_envs_changing/environment50_A_98.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_41.txt","../test_environments/grid_envs_changing/environment50_B_41.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_41.txt","../test_environments/grid_envs_changing/environment50_A_41.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_11.txt","../test_environments/grid_envs_changing/environment50_A_11.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_39.txt","../test_environments/grid_envs_changing/environment50_A_39.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_A_39.txt","../test_environments/grid_envs_changing/environment50_B_39.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_39.txt","../test_environments/grid_envs_changing/environment50_A_39.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_62.txt","../test_environments/grid_envs_changing/environment50_A_62.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_51.txt","../test_environments/grid_envs_changing/environment50_A_51.txt"]
+    fileList = ["../test_environments/grid_envs_changing/environment50_B_72.txt","../test_environments/grid_envs_changing/environment50_A_72.txt"]
+    
     #fileList = ["snake_A.txt", "snake_B.txt"]
     #fileList = ["snake_B.txt", "snake_A.txt"]
     #fileList = ["snake_A.txt", "snake_C.txt"]
@@ -564,6 +590,7 @@ if __name__ == "__main__":
             print("OUTGOING FROM PROBLEM VERTEX")
             print("g source  6,0", edge.target_state.g)
             print("rhs 6,0", edge.target_state.rhs)
+    print("LPA.solution1", LPA.solution1)
     gv = Visualizer(LPA)
     gv.plotMotionTree()
 
