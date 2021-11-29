@@ -662,7 +662,7 @@ class BIT_STAR:
                             ##print("ENTERING COST TRAVERSAL")
                             while edgeOfInterest.source_state != self.start:
                                 tmpCost += edgeOfInterest.cHat
-                                ##print("in COST TRAVERSAL tmp Cost", tmpCost)
+                                print("in COST TRAVERSAL tmp Cost", tmpCost)
                                 #if tmpCost > self.c:
                                 #    break
                                 # i dont want to iterate thru the whole tree just to find the edge target_state = edgeOfInterest.source_state  
@@ -711,6 +711,7 @@ class BIT_STAR:
                 # half way thru we will read in the B version of the environment
                 self.readEnvironment(fileList[1], updated = True)
                 self.environmentUpdated = True
+                costFile.write("new environment detected at %s; mode = %s\n"%((t_end - time.time(), mode)))
                 # clear the motion tree
                 if mode == "replan":
                     self.V = {}
@@ -731,7 +732,8 @@ class BIT_STAR:
                     # we want to prune the motion tree and replan from there
                     # specifically, we want to prune subtrees in order from largest to smallest.
                     # collisionRoot is where we will start collision checking again
-
+                    prune_t_start = time.time()
+                    print("STARTING TO PRUNE MOTION TREE", prune_t_start)
                     collisionRoot = self.start
                     collisionQueue = queue.Queue()
                     collisionQueue.put(collisionRoot)
@@ -777,9 +779,12 @@ class BIT_STAR:
 
                     #for e in self.rootsToPrune:
                 
+                    # it might be faster to make a new tree lol
                     # i am not properly setting self.goal.gT
+                    # this takes like 3 seconds!!, which is way too long
+                    pruneTheseEdges = []
                     for e in self.collisionEdgesToPop:
-                        subTreeForE = []         
+                        #subTreeForE = []         
                         bfsQ = queue.Queue()
                         poppedEdgeRootState = e.target_state
                         #poppedEdgeRootState = e.source_state
@@ -791,19 +796,28 @@ class BIT_STAR:
                                     edge.target_state.gT = inf
                                     if edge.target_state == self.goal:
                                         self.c = inf
-                                    subTreeForE.append(edge)
+                                    #subTreeForE.append(edge)
+                                    pruneTheseEdge.append(edge)
                                     bfsQ.put(edge.target_state)
                                     #bfsQ.put(edge.source_state)
-                        for prunedEdge in subTreeForE:
-                            if prunedEdge in self.E:
-                                self.E.pop(prunedEdge)
-                                if prunedEdge.source_state in self.V:
-                                    self.V.pop(prunedEdge.source_state) 
-                                if prunedEdge.target_state in self.V:
-                                    self.V.pop(prunedEdge.target_state)
-                    for e in self.collisionEdgesToPop:
-                        if e in self.E:
-                            self.E.pop(e)
+                        #for prunedEdge in subTreeForE:
+                        #    if prunedEdge in self.E:
+                        #        self.E.pop(prunedEdge)
+                        #        if prunedEdge.source_state in self.V:
+                        #            self.V.pop(prunedEdge.source_state) 
+                        #        if prunedEdge.target_state in self.V:
+                        #            self.V.pop(prunedEdge.target_state)
+                    for edge in self.collisionEdgesToPop:
+                        pruneTheseEdges.append(edge)
+                    
+                    for e in pruneTheseEdges:
+                    #for e in self.collisionEdgesToPop:
+                        #if e in self.E:
+                        self.E.pop(e)
+                        #if e.source_state in self.V:
+                        self.V.pop(e.source_state)
+                        #if e.target_state in self.V:
+                        self.V.pop(e.target_state)
                     print("len self.V", len(self.V))
                     print("len self.E", len(self.E))
                     # i need to plot the motion tree right now. 
@@ -816,6 +830,9 @@ class BIT_STAR:
                     #self.V[self.start] = self.start  
                     self.Xsamples[self.goal] = self.goal
                     print("i need to make this fast but the idea is decent")    
+                    prune_t_end = time.time()
+                    print("ending pruning process at ", prune_t_end - prune_t_start)
+            
             #print("broke out") 
         return self.V, self.E 
 
@@ -824,7 +841,7 @@ if __name__ == "__main__":
     costFile = open("costs.csv", "w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    #random.seed(69)
+    random.seed(69)
     # input stuff
     #
     BS = BIT_STAR()
@@ -835,7 +852,14 @@ if __name__ == "__main__":
 
     # instance 7 is interesting
     #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
-    fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_19.txt", "test_environments/grid_envs_changing/environment50_A_19.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_99.txt", "test_environments/grid_envs_changing/environment50_A_99.txt"]
+
+    # 
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
+    fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
@@ -850,6 +874,7 @@ if __name__ == "__main__":
     #print("asdfadsf")
 
     #from timeit import Timer
+    # most testing in 20 seconds
     test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
