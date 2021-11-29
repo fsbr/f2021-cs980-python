@@ -1,4 +1,4 @@
-# modifying this algorithm.... (how?)
+# trying to do LPA star on the samples
 import sys,os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -727,6 +727,95 @@ class BIT_STAR:
                     self.Qe = []
                     self.Qv = []
                     # i think i have to move the goal.gT as well...
+                if mode == "prune":
+                    # we want to prune the motion tree and replan from there
+                    # specifically, we want to prune subtrees in order from largest to smallest.
+                    # collisionRoot is where we will start collision checking again
+
+                    collisionRoot = self.start
+                    collisionQueue = queue.Queue()
+                    collisionQueue.put(collisionRoot)
+                    self.collisionEdgesToPop = []
+                    self.rootsToPrune = [] 
+                    subtreeCount = 0
+                    while not collisionQueue.empty():
+                        stateToCheck = collisionQueue.get()
+                        for edge in list(self.E):
+                            if edge.source_state == stateToCheck:
+                                isCollision = self.collisionCheck(edge.source_state, edge.target_state)
+                                # end of collsion checking queue
+                                collisionQueue.put(edge.target_state)
+                                if isCollision == True:
+                                    self.collisionEdgesToPop.append(edge)
+                                    #print("this subtree is in collision")
+                                    subtreeCount+=1 
+                                    self.rootsToPrune.append(edge)
+
+                    print("length of the list of edges to pop", len(self.collisionEdgesToPop))
+                    print("lenght of the list of edges at this exact moment", len(self.E))
+                    print("the number of subtrees in collision", subtreeCount)
+                    print("print self.rootsToPrune", self.rootsToPrune)
+
+                    #repeatedly perform bfs until the whole tree is pruned 
+                    #while len(self.rootsToPrune) > 0:
+                    #    self.pruneQueue = queue.Queue()
+                    #    poppedEdge = self.rootsToPrune.pop(0)
+                    #    rootState = poppedEdge.source_state
+                    #    self.pruneQueue.put(rootState)
+                    #    while not self.pruneQueue.empty():
+                    #        stateToCheck = self.pruneQueue.get()
+                    #        for edge in list(self.E):
+                    #            if edge.source_state == stateToCheck:
+                    #                self.collisionEdgesToPop.append(edge)
+                    #                self.pruneQueue.put(edge.target_state)
+                    #                if edge.target_state == self.goal:
+                    #                    self.goal.gT = inf
+                    #                    self.c = inf
+                    #                if edge in self.rootsToPrune:
+                    #                    print("i removed a state from 'rootstoprune'")
+                    #                    self.rootsToPrune.remove(edge)
+
+                    #for e in self.rootsToPrune:
+                
+                    # i am not properly setting self.goal.gT
+                    for e in self.collisionEdgesToPop:
+                        subTreeForE = []         
+                        bfsQ = queue.Queue()
+                        poppedEdgeRootState = e.target_state
+                        #poppedEdgeRootState = e.source_state
+                        bfsQ.put(poppedEdgeRootState)
+                        while not bfsQ.empty():
+                            bfsV = bfsQ.get()
+                            for edge in self.E:
+                                if edge.source_state == bfsV:
+                                    edge.target_state.gT = inf
+                                    if edge.target_state == self.goal:
+                                        self.c = inf
+                                    subTreeForE.append(edge)
+                                    bfsQ.put(edge.target_state)
+                                    #bfsQ.put(edge.source_state)
+                        for prunedEdge in subTreeForE:
+                            if prunedEdge in self.E:
+                                self.E.pop(prunedEdge)
+                                if prunedEdge.source_state in self.V:
+                                    self.V.pop(prunedEdge.source_state) 
+                                if prunedEdge.target_state in self.V:
+                                    self.V.pop(prunedEdge.target_state)
+                    for e in self.collisionEdgesToPop:
+                        if e in self.E:
+                            self.E.pop(e)
+                    print("len self.V", len(self.V))
+                    print("len self.E", len(self.E))
+                    # i need to plot the motion tree right now. 
+                    #ggv = Visualizer.Visualizer()
+                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
+                    self.Qe = []
+                    self.Qv = []
+                    self.Xsamples = {}
+                    #self.Xsamples = self.Sample()
+                    #self.V[self.start] = self.start  
+                    self.Xsamples[self.goal] = self.goal
+                    print("i need to make this fast but the idea is decent")    
             #print("broke out") 
         return self.V, self.E 
 
@@ -745,8 +834,8 @@ if __name__ == "__main__":
     #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
 
     # instance 7 is interesting
-    fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
@@ -764,18 +853,18 @@ if __name__ == "__main__":
     test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end)
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "prune")
     #t.timeit()
 
 
     ##output stuff
-    print("VERTICES")
-    print(V)
-    print(len(V))
+    #print("VERTICES")
+    ##print(V)
+    #print(len(V))
 
-    print("EDGES")
-    print(E)
-    print(len(E))
+    #print("EDGES")
+    #print(E)
+    #print(len(E))
     print(BS.obs)
     #for i in V:
     #    print("x", i.x)
