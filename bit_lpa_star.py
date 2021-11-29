@@ -34,6 +34,7 @@ class Edge:
         self.target_state = State()
         self.f = inf
         cHat = 0.0
+        self.inCollision = 0
 
 
 class BIT_STAR:
@@ -102,6 +103,7 @@ class BIT_STAR:
 
         #dynamic environment
         self.environmentUpdated = False
+        self.SkipPruning = False
     
     def readEnvironment(self, envFile, updated = False):
         A = []
@@ -508,6 +510,7 @@ class BIT_STAR:
             if (len(self.Qe) == 0 and len(self.Qv) == 0):                   # A1.4
                 #print("LINE A1.5")
                 ##print("prune")                                              # A1.5 
+                
                 self.Prune()
 
                 #print("LINE A1.6")
@@ -698,7 +701,7 @@ class BIT_STAR:
                         # this is a hack and not in the real algorithm
                         #if self.goal in self.V and self.start in self.V:
                         #    break
-                        # terminate if within 5% of the optimal solution
+                        # terminate if within 1% of the optimal solution
                         if self.c < 1.01*(self.calcDist(self.start, self.goal)):
                             break
             else:                                                               #A1.24
@@ -740,6 +743,8 @@ class BIT_STAR:
                     self.collisionEdgesToPop = []
                     self.rootsToPrune = [] 
                     subtreeCount = 0
+
+                    # i can do this in ONE BFS 
                     while not collisionQueue.empty():
                         stateToCheck = collisionQueue.get()
                         for edge in list(self.E):
@@ -753,35 +758,13 @@ class BIT_STAR:
                                     subtreeCount+=1 
                                     self.rootsToPrune.append(edge)
 
-                    print("length of the list of edges to pop", len(self.collisionEdgesToPop))
-                    print("lenght of the list of edges at this exact moment", len(self.E))
-                    print("the number of subtrees in collision", subtreeCount)
-                    print("print self.rootsToPrune", self.rootsToPrune)
+                    #print("length of the list of edges to pop", len(self.collisionEdgesToPop))
+                    #print("lenght of the list of edges at this exact moment", len(self.E))
+                    #print("the number of subtrees in collision", subtreeCount)
+                    #print("print self.rootsToPrune", self.rootsToPrune)
 
-                    #repeatedly perform bfs until the whole tree is pruned 
-                    #while len(self.rootsToPrune) > 0:
-                    #    self.pruneQueue = queue.Queue()
-                    #    poppedEdge = self.rootsToPrune.pop(0)
-                    #    rootState = poppedEdge.source_state
-                    #    self.pruneQueue.put(rootState)
-                    #    while not self.pruneQueue.empty():
-                    #        stateToCheck = self.pruneQueue.get()
-                    #        for edge in list(self.E):
-                    #            if edge.source_state == stateToCheck:
-                    #                self.collisionEdgesToPop.append(edge)
-                    #                self.pruneQueue.put(edge.target_state)
-                    #                if edge.target_state == self.goal:
-                    #                    self.goal.gT = inf
-                    #                    self.c = inf
-                    #                if edge in self.rootsToPrune:
-                    #                    print("i removed a state from 'rootstoprune'")
-                    #                    self.rootsToPrune.remove(edge)
-
-                    #for e in self.rootsToPrune:
-                
-                    # it might be faster to make a new tree lol
-                    # i am not properly setting self.goal.gT
                     # this takes like 3 seconds!!, which is way too long
+                    # this method is so fucking dumb i need to do one BFS
                     pruneTheseEdges = []
                     for e in self.collisionEdgesToPop:
                         #subTreeForE = []         
@@ -797,7 +780,7 @@ class BIT_STAR:
                                     if edge.target_state == self.goal:
                                         self.c = inf
                                     #subTreeForE.append(edge)
-                                    pruneTheseEdge.append(edge)
+                                    pruneTheseEdges.append(edge)
                                     bfsQ.put(edge.target_state)
                                     #bfsQ.put(edge.source_state)
                         #for prunedEdge in subTreeForE:
@@ -807,19 +790,19 @@ class BIT_STAR:
                         #            self.V.pop(prunedEdge.source_state) 
                         #        if prunedEdge.target_state in self.V:
                         #            self.V.pop(prunedEdge.target_state)
-                    for edge in self.collisionEdgesToPop:
-                        pruneTheseEdges.append(edge)
+                    #for edge in self.collisionEdgesToPop:
+                    #    pruneTheseEdges.append(edge)
                     
-                    for e in pruneTheseEdges:
-                    #for e in self.collisionEdgesToPop:
-                        #if e in self.E:
-                        self.E.pop(e)
-                        #if e.source_state in self.V:
-                        self.V.pop(e.source_state)
-                        #if e.target_state in self.V:
-                        self.V.pop(e.target_state)
-                    print("len self.V", len(self.V))
-                    print("len self.E", len(self.E))
+                    #for e in pruneTheseEdges:
+                    for e in self.collisionEdgesToPop + pruneTheseEdges:
+                        if e in self.E:
+                            self.E.pop(e)
+                        if e.source_state in self.V:
+                            self.V.pop(e.source_state)
+                        if e.target_state in self.V:
+                            self.V.pop(e.target_state)
+                    #print("len self.V", len(self.V))
+                    #print("len self.E", len(self.E))
                     # i need to plot the motion tree right now. 
                     #ggv = Visualizer.Visualizer()
                     #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
@@ -827,9 +810,9 @@ class BIT_STAR:
                     self.Qv = []
                     self.Xsamples = {}
                     #self.Xsamples = self.Sample()
-                    #self.V[self.start] = self.start  
+                    self.V[self.start] = self.start  
                     self.Xsamples[self.goal] = self.goal
-                    print("i need to make this fast but the idea is decent")    
+                    #print("i need to make this fast but the idea is decent")    
                     prune_t_end = time.time()
                     print("ending pruning process at ", prune_t_end - prune_t_start)
             
@@ -841,7 +824,7 @@ if __name__ == "__main__":
     costFile = open("costs.csv", "w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(69)
+    random.seed(6)
     # input stuff
     #
     BS = BIT_STAR()
@@ -878,7 +861,7 @@ if __name__ == "__main__":
     test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "prune")
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "replan")
     #t.timeit()
 
 
