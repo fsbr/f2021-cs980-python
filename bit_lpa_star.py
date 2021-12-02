@@ -725,6 +725,8 @@ class BIT_STAR:
                     self.goal.gT = inf
                     self.c = inf
 
+                    #ggv = Visualizer.Visualizer()
+                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
                     # reset it to the initial conditions
                     self.V[self.start] = self.start  
                     self.Xsamples[self.goal] = self.goal
@@ -821,10 +823,10 @@ class BIT_STAR:
 
 if __name__ == "__main__":
     #vertices = open("vertices.txt","w")
-    costFile = open("costs.csv", "w")
+    costFile = open("costs%s.csv"%time.time(), "w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    random.seed(6)
+    #random.seed(6)
     # input stuff
     #
     BS = BIT_STAR()
@@ -841,8 +843,10 @@ if __name__ == "__main__":
 
     # 
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
-    fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
@@ -861,7 +865,7 @@ if __name__ == "__main__":
     test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "prune")
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "replan")
     #t.timeit()
 
 
@@ -878,8 +882,8 @@ if __name__ == "__main__":
     #    print("x", i.x)
     #    print("y", i.y)
 
-    gv = Visualizer.Visualizer()
-    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
+    #gv = Visualizer.Visualizer()
+    #gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     #print(BS.tmpWhileVector)
