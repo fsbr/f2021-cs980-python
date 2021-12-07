@@ -27,6 +27,7 @@ class State:
         self.hHat = inf
         self.gHat = inf
         self.fHat = inf 
+        self.inCollision = False
 
 class Edge:
     def __init__(self):
@@ -34,7 +35,7 @@ class Edge:
         self.target_state = State()
         self.f = inf
         cHat = 0.0
-        self.inCollision = 0
+        self.inCollision = False 
 
 
 class BIT_STAR:
@@ -834,6 +835,7 @@ class BIT_STAR:
                     #print("i need to make this fast but the idea is decent")    
                     prune_t_end = time.time()
                     print("ending pruning process at ", prune_t_end - prune_t_start)
+                    costFile.write("pruning process end, %s\n"%(prune_t_end - prune_t_start))
             
             #print("broke out") 
         return self.V, self.E 
