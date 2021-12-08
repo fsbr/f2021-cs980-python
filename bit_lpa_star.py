@@ -864,10 +864,11 @@ if __name__ == "__main__":
 
     # 
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
-    fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
+    fileList = ["test_environments/grid_envs_changing/shortcut1B.txt", "test_environments/grid_envs_changing/shortcut1A.txt"]
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
@@ -903,8 +904,8 @@ if __name__ == "__main__":
     #    print("x", i.x)
     #    print("y", i.y)
 
-    #gv = Visualizer.Visualizer()
-    #gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
+    gv = Visualizer.Visualizer()
+    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     #print(BS.tmpWhileVector)

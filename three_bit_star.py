@@ -701,8 +701,8 @@ class BIT_STAR:
                         #if self.goal in self.V and self.start in self.V:
                         #    break
                         # terminate if within 1% of the optimal solution
-                        if self.c < 1.01*(self.calcDist(self.start, self.goal)):
-                            break
+                        #if self.c < 1.01*(self.calcDist(self.start, self.goal)):
+                        #    break
             else:                                                               #A1.24
                 ##print("Failed check of #A1.14")
                 self.Qe = []                                                    #A1.25
@@ -710,6 +710,7 @@ class BIT_STAR:
             ##print("SELF.tmpWhile", self.tmpWhile)
             #print("time.time() - t_end", t_end - time.time())
             if t_end - time.time() <=   test_length/2 and self.environmentUpdated == False:
+                replan_t_start = time.time()
                 # half way thru we will read in the B version of the environment
                 self.readEnvironment(fileList[1], updated = True)
                 self.environmentUpdated = True
@@ -732,6 +733,9 @@ class BIT_STAR:
                     self.Qe = []
                     self.Qv = []
                     # i think i have to move the goal.gT as well...
+                    replan_t_end = time.time()
+                    print("ending pruning process at ", replan_t_end - replan_t_start)
+                    costFile.write("pruning process end, %s\n"%(replan_t_end - replan_t_start))
                 if mode == "prune":
 
                     # we want to prune the motion tree and replan from there
@@ -757,10 +761,19 @@ class BIT_STAR:
                                     #print("results of checking the source state for collision", edge.source_state.inCollision)
                                     if edge.source_state.inCollision == True:
                                         edge.target_state.inCollision = True
+                                        #edge.source_state.gT = inf
+                                        edge.target_state.gT = inf
+                                        if edge.target_state == self.goal:
+                                            print("self.c = inf")
+                                            #self.goal.gT = inf
+                                            self.c = inf
                                         self.collisionEdgesToPop.append(edge)
                                 else:
                                     #print("SECOND CASE")
                                     edge.target_state.inCollision = True
+                                    edge.target_state.gT = inf
+                                    if edge.target_state == self.goal:
+                                        self.c = inf
                                     self.collisionEdgesToPop.append(edge)
                                 # if the parent vertex was not in collision, then collision check the edge
                                 collisionQueue.put(edge.target_state)
@@ -819,9 +832,9 @@ class BIT_STAR:
                             self.V.pop(e.source_state)
                         if e.target_state in self.V:
                             self.V.pop(e.target_state)
-                        for keyStatePair in self.Qe:
-                            if keyStatePair[2] == e:
-                                self.Qe.remove(keyStatePair)
+                    #    for keyStatePair in self.Qe:
+                    #        if keyStatePair[2] == e:
+                    #            self.Qe.remove(keyStatePair)
                         for keyStatePair in self.Qv:
                             if keyStatePair[2] == e.source_state:
                                 self.Qv.remove(keyStatePair)
@@ -833,10 +846,10 @@ class BIT_STAR:
                     # i need to plot the motion tree right now. 
 
                     # NO WE DONT JUST ERASE THIS THING
-                    #self.Qe = []
+                    self.Qe = []
                     #self.Qv = []
-                    #self.Xsamples = {}
-                    #self.Xsamples = self.Sample()
+                    self.Xsamples = {}
+                    self.Xsamples = self.Sample()
                     self.V[self.start] = self.start  
                     self.Xsamples[self.goal] = self.goal
                     #print("i need to make this fast but the idea is decent")    
@@ -867,7 +880,7 @@ if __name__ == "__main__":
 
     # instance 7 is interesting
     #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_19.txt", "test_environments/grid_envs_changing/environment50_A_19.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_99.txt", "test_environments/grid_envs_changing/environment50_A_99.txt"]
 
@@ -875,8 +888,15 @@ if __name__ == "__main__":
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
-    fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcut1A.txt", "test_environments/grid_envs_changing/shortcut1B.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcut1B.txt", "test_environments/grid_envs_changing/shortcut1A.txt"]
+
+
+
+
+
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
