@@ -735,6 +735,10 @@ class BIT_STAR:
                     # i think i have to move the goal.gT as well...
                 if mode == "prune":
 
+
+                    # Uncomment to see the old motion tree
+                    #ggv = Visualizer.Visualizer()
+                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
                     # we want to prune the motion tree and replan from there
                     # specifically, we want to prune subtrees in order from largest to smallest.
                     # collisionRoot is where we will start collision checking again
@@ -821,8 +825,8 @@ class BIT_STAR:
                     #print("len self.V", len(self.V))
                     #print("len self.E", len(self.E))
                     # i need to plot the motion tree right now. 
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
+                    ggv = Visualizer.Visualizer()
+                    ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
 
                     # NO WE DONT JUST ERASE THIS THING
                     #self.Qe = []
@@ -843,7 +847,7 @@ if __name__ == "__main__":
     costFile = open("costs%s.csv"%time.time(), "w")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    #random.seed(6)
+    random.seed(6)
     # input stuff
     #
     BS = BIT_STAR()
@@ -860,9 +864,9 @@ if __name__ == "__main__":
 
     # 
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
-    fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
+    #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
     BS.readEnvironment(fileList[0], False)
     #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")

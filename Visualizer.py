@@ -32,22 +32,6 @@ class Visualizer:
 
         xVec = []
         yVec = []
-        #for tree in oldEdges:
-        #    for edge in tree:
-        #        xVec.append(edge.source_state.x)
-        #        xVec.append(edge.target_state.x)
-        #        yVec.append(edge.source_state.y)
-        #        yVec.append(edge.target_state.y)
-        #        #ax.plot(xVec, yVec, "r-x")
-        #        ax.plot(xVec, yVec, "-", color="#A832A4")
-        #        #ax.plot(xVec,yVec, "r")
-        #        xVec = []
-        #        yVec = []
-
-        #    # is this used?
-        #    xSolution = []
-        #    ySolution = []
-        # find goal
         
         xSampleVector = []
         ySampleVector = []

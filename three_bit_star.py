@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import heapq
 import random
-import Visualizer
-#from numba import jit
-
+import Visualizer #from numba import jit import time
 import time
 
 import queue # for tree pruning
@@ -745,7 +743,6 @@ class BIT_STAR:
                     collisionQueue = queue.Queue()
                     collisionQueue.put(collisionRoot)
                     self.collisionEdgesToPop = []
-                    self.rootsToPrune = [] 
                     subtreeCount = 0
 
                     # i can do this in ONE BFS 
@@ -753,15 +750,21 @@ class BIT_STAR:
                         stateToCheck = collisionQueue.get()
                         for edge in list(self.E):
                             if edge.source_state == stateToCheck:
-                                isCollision = self.collisionCheck(edge.source_state, edge.target_state)
-
-                                # end of collsion checking queue
-                                collisionQueue.put(edge.target_state)
-                                if isCollision == True:
+                                # 1st case, check if the parent was in collision
+                                if edge.source_state.inCollision == False:
+                                    #print("FIRST CASE")
+                                    edge.source_state.inCollision = bool(self.collisionCheck(edge.source_state, edge.target_state))
+                                    #print("results of checking the source state for collision", edge.source_state.inCollision)
+                                    if edge.source_state.inCollision == True:
+                                        edge.target_state.inCollision = True
+                                        self.collisionEdgesToPop.append(edge)
+                                else:
+                                    #print("SECOND CASE")
+                                    edge.target_state.inCollision = True
                                     self.collisionEdgesToPop.append(edge)
-                                    #print("this subtree is in collision")
-                                    subtreeCount+=1 
-                                    self.rootsToPrune.append(edge)
+                                # if the parent vertex was not in collision, then collision check the edge
+                                collisionQueue.put(edge.target_state)
+
 
                     #print("length of the list of edges to pop", len(self.collisionEdgesToPop))
                     #print("lenght of the list of edges at this exact moment", len(self.E))
@@ -770,23 +773,31 @@ class BIT_STAR:
 
                     # this takes like 3 seconds!!, which is way too long
                     # this method is so fucking dumb i need to do one BFS
-                    pruneTheseEdges = []
-                    for e in self.collisionEdgesToPop:
-                        #subTreeForE = []         
-                        bfsQ = queue.Queue()
-                        poppedEdgeRootState = e.target_state
-                        #poppedEdgeRootState = e.source_state
-                        bfsQ.put(poppedEdgeRootState)
-                        while not bfsQ.empty():
-                            bfsV = bfsQ.get()
-                            for edge in self.E:
-                                if edge.source_state == bfsV:
-                                    edge.target_state.gT = inf
-                                    if edge.target_state == self.goal:
-                                        self.c = inf
-                                    #subTreeForE.append(edge)
-                                    pruneTheseEdges.append(edge)
-                                    bfsQ.put(edge.target_state)
+
+
+
+                    #pruneTheseEdges = []
+                    #for e in self.collisionEdgesToPop:
+                    #    #subTreeForE = []         
+                    #    bfsQ = queue.Queue()
+                    #    poppedEdgeRootState = e.target_state
+                    #    #poppedEdgeRootState = e.source_state
+                    #    bfsQ.put(poppedEdgeRootState)
+                    #    while not bfsQ.empty():
+                    #        bfsV = bfsQ.get()
+                    #        for edge in self.E:
+                    #            if edge.source_state == bfsV:
+                    #                edge.target_state.gT = inf
+                    #                if edge.target_state == self.goal:
+                    #                    self.c = inf
+                    #                #subTreeForE.append(edge)
+                    #                pruneTheseEdges.append(edge)
+                    #                bfsQ.put(edge.target_state)
+
+
+
+
+
                                     #bfsQ.put(edge.source_state)
                         #for prunedEdge in subTreeForE:
                         #    if prunedEdge in self.E:
@@ -801,18 +812,16 @@ class BIT_STAR:
                     #for e in pruneTheseEdges:
 
                     
-                    for e in self.collisionEdgesToPop + pruneTheseEdges:
+                    for e in self.collisionEdgesToPop:# + pruneTheseEdges:
                         if e in self.E:
                             self.E.pop(e)
                         if e.source_state in self.V:
                             self.V.pop(e.source_state)
                         if e.target_state in self.V:
                             self.V.pop(e.target_state)
-
                         for keyStatePair in self.Qe:
                             if keyStatePair[2] == e:
                                 self.Qe.remove(keyStatePair)
-
                         for keyStatePair in self.Qv:
                             if keyStatePair[2] == e.source_state:
                                 self.Qv.remove(keyStatePair)
@@ -822,8 +831,6 @@ class BIT_STAR:
                     #print("len self.V", len(self.V))
                     #print("len self.E", len(self.E))
                     # i need to plot the motion tree right now. 
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
 
                     # NO WE DONT JUST ERASE THIS THING
                     #self.Qe = []
@@ -836,6 +843,10 @@ class BIT_STAR:
                     prune_t_end = time.time()
                     print("ending pruning process at ", prune_t_end - prune_t_start)
                     costFile.write("pruning process end, %s\n"%(prune_t_end - prune_t_start))
+                    
+                    # we need to visualize this thing AFTER we do the pruning
+                    #ggv = Visualizer.Visualizer()
+                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
             
             #print("broke out") 
         return self.V, self.E 
@@ -852,7 +863,7 @@ if __name__ == "__main__":
 
     # for changing environments
     #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
-    #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
+    #fileList = ["test_environments/grid_envs_changing10/environment10_A_5.txt", "test_environments/grid_envs_changing10/environment10_B_5.txt"]
 
     # instance 7 is interesting
     #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
