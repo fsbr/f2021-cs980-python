@@ -923,7 +923,7 @@ if __name__ == "__main__":
     test_length = 20 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "replan")
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "prune")
     #t.timeit()
 
 
