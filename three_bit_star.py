@@ -880,13 +880,16 @@ if __name__ == "__main__":
 
     # instance 7 is interesting
     #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
-    fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_19.txt", "test_environments/grid_envs_changing/environment50_A_19.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_99.txt", "test_environments/grid_envs_changing/environment50_A_99.txt"]
 
     # 
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_90.txt", "test_environments/grid_envs_changing/environment50_B_87.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_6.txt", "test_environments/grid_envs_changing/environment50_B_6.txt"]
+    fileList = ["test_environments/grid_envs_changing1000/environment1000_A_6.txt", "test_environments/grid_envs_changing1000/environment1000_B_6.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
     #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
@@ -912,10 +915,10 @@ if __name__ == "__main__":
 
     #from timeit import Timer
     # most testing in 20 seconds
-    test_length = 20 
+    test_length = 120 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "prune")
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "replan")
     #t.timeit()
 
 
