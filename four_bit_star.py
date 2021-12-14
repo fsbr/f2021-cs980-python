@@ -388,6 +388,7 @@ class BIT_STAR:
         self.dbgEV2X = 0
         self.dbgEV2V = 0
         self.dbgVVold = False
+
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         
@@ -712,6 +713,8 @@ class BIT_STAR:
             if t_end - time.time() <=   test_length/2 and self.environmentUpdated == False:
                 replan_t_start = time.time()
                 # half way thru we will read in the B version of the environment
+                ggv = Visualizer.Visualizer()
+                ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
                 self.readEnvironment(fileList[1], updated = True)
                 self.environmentUpdated = True
                 costFile.write("new environment detected at %s; mode = %s\n"%((t_end - time.time(), mode)))
@@ -861,8 +864,8 @@ class BIT_STAR:
                     costFile.write("pruning process end, %s\n"%(prune_t_end - prune_t_start))
                     
                     # we need to visualize this thing AFTER we do the pruning
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
+                    ggv = Visualizer.Visualizer()
+                    ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
             
             #print("broke out") 
         return self.V, self.E 
@@ -889,9 +892,9 @@ if __name__ == "__main__":
 
     # 
     #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
+    fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
     #fileList = ["test_environments/grid_envs_changing/environment50_A_90.txt", "test_environments/grid_envs_changing/environment50_B_87.txt"]
-    fileList = ["test_environments/grid_envs_changing/environment50_A_6.txt", "test_environments/grid_envs_changing/environment50_B_6.txt"]
+    #fileList = ["test_environments/grid_envs_changing/environment50_A_6.txt", "test_environments/grid_envs_changing/environment50_B_6.txt"]
     #fileList = ["test_environments/grid_envs_changing1000/environment1000_A_6.txt", "test_environments/grid_envs_changing1000/environment1000_B_6.txt"]
     #fileList = ["test_environments/grid_envs_changing500/environment500_A_55.txt", "test_environments/grid_envs_changing500/environment500_B_55.txt"]
     #fileList = ["test_environments/grid_envs_changing500/environment500_A_55.txt", "test_environments/grid_envs_changing500/environment500_B_55.txt"]
