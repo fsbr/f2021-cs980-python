@@ -4,6 +4,7 @@ import matplotlib.patches as patches
 class Visualizer:
     def __init__(self):
         print("Visualizer")
+        self.f,self.ax = plt.subplots()
 
     def plotMotionTree(self,V,E,obsMap,xMax, yMax, samples, start, goal, oldEdges):
         fig, ax = plt.subplots()
@@ -107,4 +108,64 @@ class Visualizer:
         # too lazy
         plt.xlim((0,50))
         plt.ylim((0,50))
+        plt.show()
+
+    def plotEnv(self, PLAN):
+        obsMap = PLAN.obs
+        xMax = PLAN.xMax
+        yMax = PLAN.yMax
+        # plotting the obstacles
+        countY = 0
+        for i in obsMap:
+            countX = 0
+            for j in i:
+                if j == 1:
+                    rect = patches.Rectangle((np.floor(countX),np.floor(yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
+                    self.ax.add_patch(rect) 
+                countX+=1
+            countY +=1
+
+    def plotSamples(self, PLAN):
+        samples = PLAN.Xsamples
+        xSampleVector = []
+        ySampleVector = []
+        for state in samples:
+            xSampleVector.append(state.x)
+            ySampleVector.append(state.y)
+        self.ax.plot(xSampleVector,ySampleVector, "o", color = "#757575", markersize=2)
+
+    def plotEdges(self, PLAN):
+        xVec = []
+        yVec = []
+        print("PLOT EDGES")
+        for edge in PLAN.E:
+            
+            xVec.append(edge.source_state.x)
+            xVec.append(edge.target_state.x)
+            yVec.append(edge.source_state.y)
+            yVec.append(edge.target_state.y)
+
+            #print(edge.source_state.x)
+            #print(edge.target_state.x)
+            #print(edge.source_state.y)
+            #print(edge.target_state.y)
+
+            #ax.plot(xVec, yVec, "r-x")
+            self.ax.plot(xVec, yVec, "-", color="#FFA71A")
+            #ax.plot(xVec,yVec, "r")
+            xVec = []
+            yVec = []
+
+
+    def labelLastChance(self,PLAN):
+        startX = PLAN.start.x
+        startY = PLAN.start.y
+        goalX = PLAN.goal.x
+        goalY = PLAN.goal.y
+        self.ax.plot(startX,startY, "go", markersize=10)
+        self.ax.plot(goalX,goalY, "ro", markersize=10)
+        self.ax.set_xlabel("x (m)")
+        self.ax.set_ylabel("y (m)")
+        self.ax.set_title("Explicit RGG")
+        self.ax.axis("equal")
         plt.show()
