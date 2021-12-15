@@ -13,13 +13,18 @@ class State():
     def __init__(self):
         self.x = 5 
         self.y = 5 
+        self.g = inf
+        self.h = inf
         self.gT = inf
+
+        self.rhs = inf
         
 
 class Edge():
     def __init__(self):
         self.source_state = State() 
         self.target_state = State()
+        self.edgeCost = inf
 
 class LAST:
     def __init__(self):
@@ -48,6 +53,9 @@ class LAST:
         self.r = 2
         self.V = {}
         self.E = {}
+
+        # state appending
+        self.stateId = 0
 
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
@@ -149,15 +157,28 @@ class LAST:
         #self.V = self.Xsamples
         self.Xsamples[self.start] = self.start
         self.Xsamples[self.goal] = self.goal
+
+        for sample in self.Xsamples:
+            sample.h = self.calcDist(sample, self.goal)
+
         self.Xsamples2 = self.Xsamples.copy()
+    
+        # start and goal stuff
+        self.start.g = 0
+        self.start.h = self.calcDist(self.start, self.goal)
+
+        self.goal.h = 0
+        self.goal.g = self.calcDist(self.start, self.goal)
+
         for i in self.Xsamples:
             for j in self.Xsamples2:
                 dist = self.calcDist(i,j)
-                print(dist)
+                #print(dist)
                 if dist <= self.r:
                     edgeToAdd = Edge()
                     edgeToAdd.source_state = i
                     edgeToAdd.target_state = j
+                    edgeToAdd.edgeCost = self.calcDist(i,j)
                     self.E[edgeToAdd] = edgeToAdd
         self.V = self.Xsamples
 
@@ -180,28 +201,196 @@ class LAST:
         minItem = min(g,rhs)                                                                                 
         return [minItem + h, minItem]    
 
+    def UpdateVertex(self, edge, secondCase = False):
+        # my s is his u
+        s = edge.target_state
+        root = edge.source_state
+
+        print("root.x, root.y", root.x, root.y)
+        print("s.x, s.y", s.x, s.y)
+    
+
+        #print("root.g", root.g)
+        #print("root == start", root == self.start)
+
+        # this if s!=self.start is a hack!! :]
+        #if s != self.start:
+        #    #print("successor wasn't the start")
+        #    tentativeRhs = edge.edgeCost + root.g
+        #    #print("tentativeRhs", tentativeRhs)
+        #    #print("edgeCost", edge.edgeCost)
+        #    if tentativeRhs < s.rhs:
+        #        s.rhs = tentativeRhs
+        #        s.cameFromIdx = (root.iX, root.iY)
+        #        s.cameFromCoord = (root.x, root.y)
+
+        rhsList = []
+        cameFromIdxList = []
+        cameFromCoordList = []
+        preds = self.getPred(s)
+
+        #if secondCase == True:
+        #    upreds = self.getPred(self.utransfer)
+        #    
+        #    print("upreds", upreds)
+        #    print("preds before", preds)
+        #    #preds.append(upreds)
+        #    preds = preds + upreds
+        #print("preds after", preds)
+
+        for pred in preds:
+            #print(pred)
+            #if pred.target_state !=  self.start:
+            tentativeRhs = pred.edgeCost + pred.source_state.g
+            rhsList.append( tentativeRhs )
+            cameFromIdxList.append( (pred.source_state) )
+            #cameFromIdxList.append( (s.iX, s.iY) )
+            #if s == self.goal:
+            #    print("DOING RHS FOR GOAL")
+            #print("predecessor.edgeCost", predecessor.edgeCost)
+            #print("pred.source_state.g", predecessor.source_state.g)
+            #tentativeRhs = predecessor.edgeCost + predecessor.source_state.g
+            #rhsList.append(tentativeRhs)
+            #cameFromIdxList.append((predecessor.source_state.iX, predecessor.source_state.iY))
+            #cameFromCoordList.append((predecessor.source_state.x, predecessor.source_state.y))
+                
+        if s != self.start:
+            minRhs = min(rhsList)
+            print("min Rhs", minRhs)
+            print("from rhsList", rhsList)
+            min_index = rhsList.index(minRhs)
+            print("min index", min_index)
+            print("cameFromIdxList", cameFromIdxList)
+            s.rhs = minRhs
+            s.f = s.rhs + s.h
+            #s.g = inf
+            s.cameFromIdx = cameFromIdxList[min_index]
+            #s.cameFromCoordList = cameFromCoordList[min_index]
+        else:   #s must be the start
+            s.rhs = 0
+
+        # this line once stopped me from terminating
+        for keyStatePair in self.U:
+            #print("keystatepair", keyStatePair)
+            #print("keystatepair[2]", keyStatePair[2])
+            if keyStatePair[2] == s:
+                self.U.remove(keyStatePair)
+        print("s.g", s.g)
+        print("s.rhs", s.rhs)
+
+        if s.g != s.rhs:
+            self.stateId+=1
+            heapq.heappush(self.U, (self.CalculateKey(s), self.stateId, s) )
+            print("enqueued onto U")
+        print("finished update vertex")
+
+    def getPred(self,u):
+        self.succs = []
+        for key, edge in self.E.items():
+            if edge.target_state == u:
+                self.succs.append(edge)
+                #print("succs.edgeCost", edge.edgeCost)
+        #print("self.succs", self.succs)
+        return self.succs
+
+    def getSucc(self,u):
+        # given a state, return the successors 
+        self.succs = []
+        for key, edge in self.E.items():
+            # only print these for debugging it makes everythin really slow
+            #print("key", key)
+            #print("edge", edge)
+            if edge.source_state == u:
+                self.succs.append(edge)
+                #print("succs.edgeCost", edge.edgeCost)
+        #print("self.succs", self.succs)
+        return self.succs
+
+    def bestU(self):
+        # return the key in lex order unless the set is emtpy then return [inf, inf]
+        if len(self.U) > 0:
+            return self.U[0][0]
+        else:
+            return [inf,inf] 
+
+    def ComputeShortestPath(self):
+        #print("self.U", self.U)
+        #print("self.U[0]", self.U[0])
+        #while self.U[0][0] < self.CalculateKey(self.V[(self.goal.iX, self.goal.iY)]) or (self.V[(self.goal.iX, self.goal.iY)].rhs != self.V[(self.goal.iX, self.goal.iY)].g):
+        while self.bestU() < self.CalculateKey(self.V[self.goal]) or (self.V[self.goal].rhs != self.V[self.goal].g):
+            #print("self.U", self.U)
+            u = heapq.heappop(self.U)[2]
+            #print("u", u)
+            if u.g > u.rhs:
+                print("first case")
+                u.g = u.rhs
+                self.succs = self.getSucc(u)
+                #print("self.succs", self.succs)
+                for edge in self.succs:
+                    self.UpdateVertex(edge, True)
+                    #self.motionE[(edge.source_state, edge.target_state)] = edge
+            else:
+                print("second case")
+                if u != self.start:
+                    u.g = inf
+                self.succs = self.getSucc(u)
+
+                #edgeU = Edge()
+                #edgeU.source_state = u
+                #edgeU.target_state = u      # {union of {16}}
+                #edgeU.edgeCost = 0
+                # actually appending this loops the algorithm forever 
+                # self.succs.append(edgeU)       # lets worry about this later
+                self.utransfer = u
+                for edge in self.succs:
+                    self.UpdateVertex(edge, True)
+                    #self.motionE[(edge.source_state, edge.target_state)] = edge
+
     def Main(self):
         Xsamples = self.Sample()
         print("Xsamples", Xsamples)
         self.makeExplicitRGG()
         
         self.Initialize()
+        self.ComputeShortestPath()
 
+        self.solution1 = []
+        stateOfInterest = self.goal
+        timeOut = 0
+        while stateOfInterest != self.start :
+            if timeOut >50:
+                break
+            self.solution1.append(stateOfInterest.cameFromIdx)
+            try: 
+                stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            except KeyError:
+                print("NO PATH FOUND")
+                self.solution1 = [(self.start.iX, self.start.iY)]
+                self.solution1.append( (self.goal.iX, self.goal.iY))
+                break
+            print("i am stuck in the first solution path :[")
+            timeOut+=1
+            print("timeOut", timeOut)
+        print("solution path 1", self.solution1)
+        return self.solution1
         
         
 if __name__ == "__main__":
-    random.seed(420)
+    random.seed(69)
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_clear.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_69.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
-    fileList = ["../test_environments/grid_envs_changing10/environment10_A_69.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
+    fileList = ["../test_environments/grid_envs_changing10/environment10_A_10.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
     print("LAST CHANCE")
     L = LAST()
 
     L.readEnvironment(fileList[0], False)
-    L.Main()
+    solution1 = L.Main()
+    for state in solution1:
+        print("statex, statey", state.x, state.y)
 
     gv = Visualizer.Visualizer()
     gv.plotEnv(L)
     gv.plotEdges(L)
+    gv.plotSolutionEdges(solution1)
     gv.plotSamples(L) 
     gv.labelLastChance(L)
