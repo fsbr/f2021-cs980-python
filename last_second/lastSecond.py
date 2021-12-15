@@ -227,6 +227,7 @@ class LAST:
         rhsList = []
         cameFromIdxList = []
         cameFromCoordList = []
+        fList = []
         preds = self.getPred(s)
 
         #if secondCase == True:
@@ -243,7 +244,7 @@ class LAST:
             #if pred.target_state !=  self.start:
             tentativeRhs = pred.edgeCost + pred.source_state.g
             rhsList.append( tentativeRhs )
-            cameFromIdxList.append( (pred.source_state) )
+            cameFromIdxList.append((pred.source_state))
             #cameFromIdxList.append( (s.iX, s.iY) )
             #if s == self.goal:
             #    print("DOING RHS FOR GOAL")
@@ -341,7 +342,6 @@ class LAST:
                 #edgeU.edgeCost = 0
                 # actually appending this loops the algorithm forever 
                 # self.succs.append(edgeU)       # lets worry about this later
-                self.utransfer = u
                 for edge in self.succs:
                     self.UpdateVertex(edge, True)
                     #self.motionE[(edge.source_state, edge.target_state)] = edge
@@ -361,13 +361,7 @@ class LAST:
             if timeOut >50:
                 break
             self.solution1.append(stateOfInterest.cameFromIdx)
-            try: 
-                stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
-            except KeyError:
-                print("NO PATH FOUND")
-                self.solution1 = [(self.start.iX, self.start.iY)]
-                self.solution1.append( (self.goal.iX, self.goal.iY))
-                break
+            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
             print("i am stuck in the first solution path :[")
             timeOut+=1
             print("timeOut", timeOut)
@@ -376,7 +370,7 @@ class LAST:
         
         
 if __name__ == "__main__":
-    random.seed(69)
+    #random.seed(69)
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_clear.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_69.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
     fileList = ["../test_environments/grid_envs_changing10/environment10_A_10.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
