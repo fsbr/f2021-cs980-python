@@ -1,13 +1,17 @@
 # JUST implementing an edge queu to do LPA*
 import sys
 sys.path.append("../")
+import code
+
 import Visualizer
+import time
 import heapq
 import numpy as np
 import random
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-dark")
 inf = np.Inf
+
 
 class State():
     def __init__(self):
@@ -50,7 +54,7 @@ class LAST:
         self.Xsamples = {}
 
         # rgg stuff
-        self.r = 2
+        self.r = 2.0 
         self.V = {}
         self.E = {}
 
@@ -153,6 +157,58 @@ class LAST:
             ##print("length of Xsamples in Samples", len(self.Xsamples))
         return self.Xsamples
 
+
+
+    def collisionCheck(self, Vm, Xm):
+        #self.dbgCollisionCheckCount += 1
+        # returns true if there is a collision
+        x1 = Vm.x
+        y1 = Vm.y
+        x2 = Xm.x
+        y2 = Xm.y
+
+        # get the equation of the line
+        m = (Xm.y - Vm.y)/(Xm.x - Vm.x)
+        b = y1 - m*x1
+        ##print("slope m = ",m)
+        ##print("intercept b = ", b)
+        # 200 checks per unit in X
+        numberOfChecks = 200
+        checkY = int(abs(y2-y1)*numberOfChecks)
+        checkX = int(abs(x2-x1)*numberOfChecks)
+        if checkY > checkX:
+            collCheck = checkY
+        else:
+            collCheck = checkX
+        t = np.linspace(x1, x2,collCheck) #10,000 to avoid the diag
+        ##print("len t", len(t))
+        Y = m*t + b
+        ##plt.plot(t,Y)
+        ##plt.xlim((0,11))
+        ##plt.ylim((0,11))
+        #plt.show()
+        coordinate_t = np.floor(t) 
+        #print(Y)
+        #print(self.xMax)
+        #print(self.yMax-Y)
+        coordinate_Y = np.floor(self.yMax-Y) 
+        #print(coordinate_t)
+        #print(coordinate_Y)
+        #print("PRINTING OBSTACLES")
+        #print(self.obs)
+        #print("PRINTING OBSTACLES FINISHED")
+        # i iterates over the 
+        for i in range(len(coordinate_t)): 
+            idxToObs_t = int(coordinate_t[i])
+            idxToObs_Y = int(coordinate_Y[i]) 
+            #print("idxToObs_t" + str(idxToObs_t) + " idxToObs_Y " + str(idxToObs_Y))
+            #print("iterating over the obstacles")
+            #print(self.obs[idxToObs_Y][idxToObs_t])
+            if self.obs[idxToObs_Y][idxToObs_t] == 1:
+                return 1  
+        return 0
+
+
     def makeExplicitRGG(self):
         #self.V = self.Xsamples
         self.Xsamples[self.start] = self.start
@@ -174,13 +230,29 @@ class LAST:
             for j in self.Xsamples2:
                 dist = self.calcDist(i,j)
                 #print(dist)
-                if dist <= self.r:
+                if dist <= self.r and i != j:
                     edgeToAdd = Edge()
                     edgeToAdd.source_state = i
                     edgeToAdd.target_state = j
                     edgeToAdd.edgeCost = self.calcDist(i,j)
                     self.E[edgeToAdd] = edgeToAdd
-        self.V = self.Xsamples
+        self.V = self.Xsamples.copy()
+
+    def updateEdgeCosts(self):
+        # to be called AFTER you load in second map
+        print("UPDATING EDGE COSTS")
+        changedEdges = []
+        for E in self.E:
+            tmpEdgeCost = E.edgeCost
+            if self.collisionCheck(E.source_state, E.target_state) == 1:
+                E.edgeCost = inf
+            else:
+                E.edgeCost = self.calcDist(E.source_state, E.target_state)
+
+            if E.edgeCost != tmpEdgeCost:
+                changedEdges.append(E)
+        return changedEdges
+            
 
     def Initialize(self):
         self.changedMap = [[ [False, False] for x in range(self.xMax)] for y in range(self.yMax)]
@@ -210,50 +282,21 @@ class LAST:
         print("s.x, s.y", s.x, s.y)
     
 
-        #print("root.g", root.g)
-        #print("root == start", root == self.start)
-
-        # this if s!=self.start is a hack!! :]
-        #if s != self.start:
-        #    #print("successor wasn't the start")
-        #    tentativeRhs = edge.edgeCost + root.g
-        #    #print("tentativeRhs", tentativeRhs)
-        #    #print("edgeCost", edge.edgeCost)
-        #    if tentativeRhs < s.rhs:
-        #        s.rhs = tentativeRhs
-        #        s.cameFromIdx = (root.iX, root.iY)
-        #        s.cameFromCoord = (root.x, root.y)
-
         rhsList = []
         cameFromIdxList = []
         cameFromCoordList = []
         fList = []
         preds = self.getPred(s)
 
-        #if secondCase == True:
-        #    upreds = self.getPred(self.utransfer)
-        #    
-        #    print("upreds", upreds)
-        #    print("preds before", preds)
-        #    #preds.append(upreds)
-        #    preds = preds + upreds
-        #print("preds after", preds)
-
         for pred in preds:
             #print(pred)
             #if pred.target_state !=  self.start:
+
+            if self.collisionCheck(pred.source_state,pred.target_state) == 1:
+                pred.edgeCost = inf
             tentativeRhs = pred.edgeCost + pred.source_state.g
             rhsList.append( tentativeRhs )
-            cameFromIdxList.append((pred.source_state))
-            #cameFromIdxList.append( (s.iX, s.iY) )
-            #if s == self.goal:
-            #    print("DOING RHS FOR GOAL")
-            #print("predecessor.edgeCost", predecessor.edgeCost)
-            #print("pred.source_state.g", predecessor.source_state.g)
-            #tentativeRhs = predecessor.edgeCost + predecessor.source_state.g
-            #rhsList.append(tentativeRhs)
-            #cameFromIdxList.append((predecessor.source_state.iX, predecessor.source_state.iY))
-            #cameFromCoordList.append((predecessor.source_state.x, predecessor.source_state.y))
+            cameFromIdxList.append(pred.source_state)
                 
         if s != self.start:
             minRhs = min(rhsList)
@@ -262,10 +305,15 @@ class LAST:
             min_index = rhsList.index(minRhs)
             print("min index", min_index)
             print("cameFromIdxList", cameFromIdxList)
+
+            
             s.rhs = minRhs
             s.f = s.rhs + s.h
             #s.g = inf
             s.cameFromIdx = cameFromIdxList[min_index]
+            print(cameFromIdxList)
+
+            #code.interact(local=locals())
             #s.cameFromCoordList = cameFromCoordList[min_index]
         else:   #s must be the start
             s.rhs = 0
@@ -352,13 +400,20 @@ class LAST:
         self.makeExplicitRGG()
         
         self.Initialize()
+
+        tcsp1_start = time.time()
         self.ComputeShortestPath()
+        tcsp1_end = time.time()
+        tcsp1 = tcsp1_end - tcsp1_start
 
         self.solution1 = []
+        self.solution2 = []
+
         stateOfInterest = self.goal
+        self.solution1.append(self.goal)
         timeOut = 0
         while stateOfInterest != self.start :
-            if timeOut >50:
+            if timeOut >500:
                 break
             self.solution1.append(stateOfInterest.cameFromIdx)
             stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
@@ -366,25 +421,77 @@ class LAST:
             timeOut+=1
             print("timeOut", timeOut)
         print("solution path 1", self.solution1)
-        return self.solution1
+
+
+        ## REACT TO UPDATES
+        self.readEnvironment(fileList[1], True)
+        changedEdges = self.updateEdgeCosts()
+
+        print(changedEdges)
+        for changedEdge in changedEdges:
+            self.UpdateVertex(changedEdge)
+
+        tcsp2_start = time.time()
+        self.ComputeShortestPath()
+        tcsp2_end = time.time()
+        tcsp2 = tcsp2_end - tcsp2_start
+
+        stateOfInterest = self.goal
+        self.solution2.append(self.goal)
+        timeOut = 0
+        while stateOfInterest != self.start :
+            if timeOut >500:
+                break
+            self.solution2.append(stateOfInterest.cameFromIdx)
+            stateOfInterest = self.V[stateOfInterest.cameFromIdx]            
+            print("i am stuck in the first solution path :[")
+            timeOut+=1
+            print("timeOut", timeOut)
+        print("solution path 2", self.solution2)
+
+        return self.solution1, self.solution2, changedEdges, tcsp1, tcsp2
         
         
 if __name__ == "__main__":
-    #random.seed(69)
+    #random.seed(69) # my lucky number
+    #random.seed(10)
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_clear.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_69.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
-    fileList = ["../test_environments/grid_envs_changing10/environment10_A_10.txt", "../test_environments/grid_envs_changing/environment50_A_77.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_A_10.txt", "../test_environments/grid_envs_changing10/environment10_B_10.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_B_10.txt", "../test_environments/grid_envs_changing10/environment10_A_10.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_A_11.txt", "../test_environments/grid_envs_changing10/environment10_B_11.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_B_11.txt", "../test_environments/grid_envs_changing10/environment10_A_11.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_A_69.txt", "../test_environments/grid_envs_changing10/environment10_B_69.txt"]
+    fileList = ["../test_environments/grid_envs_changing10/environment10_B_69.txt", "../test_environments/grid_envs_changing10/environment10_A_69.txt"]
     print("LAST CHANCE")
     L = LAST()
 
     L.readEnvironment(fileList[0], False)
-    solution1 = L.Main()
+    solution1, solution2, changedEdges, tcsp1, tcsp2 = L.Main()
+    solution1X = []
+    solution1Y = []
     for state in solution1:
-        print("statex, statey", state.x, state.y)
+        #print("statex, statey", state.x, state.y)
+        solution1X.append(state.x)
+        solution1Y.append(state.y)
+    
+    solution2X = []
+    solution2Y = []
+    for state in solution2:
+        #print("statex, statey", state.x, state.y)
+        solution2X.append(state.x)
+        solution2Y.append(state.y)
 
+
+    print("time for each results")
+    print("tcsp1 = %s\n"%tcsp1)
+    print("tcsp2 = %s\n"%tcsp2)
     gv = Visualizer.Visualizer()
-    gv.plotEnv(L)
     gv.plotEdges(L)
-    gv.plotSolutionEdges(solution1)
+    gv.plotEnv(L)
+    #gv.plotSolutionEdges(solution1)
+    gv.lcPlotSolution(solution1X, solution1Y, "#420690", 5)
+    gv.lcPlotSolution(solution2X, solution2Y, "#007fff", 3)
     gv.plotSamples(L) 
     gv.labelLastChance(L)
+

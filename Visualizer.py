@@ -156,6 +156,29 @@ class Visualizer:
             xVec = []
             yVec = []
 
+    def lcPlotSolution(self, X,Y, colorString, width):
+        self.ax.plot(X,Y, color=colorString, linewidth=width)
+    def plotSolutionEdges(self, stateList):
+        xVec = []
+        yVec = []
+        print("PLOT EDGES")
+        for state in stateList:
+            
+            xVec.append(state.x)
+            yVec.append(state.y)
+
+            #print(edge.source_state.x)
+            #print(edge.target_state.x)
+            #print(edge.source_state.y)
+            #print(edge.target_state.y)
+
+            #ax.plot(xVec, yVec, "r-x")
+            self.ax.plot(xVec, yVec, "-", color="#007FFF")
+            #ax.plot(xVec,yVec, "r")
+            xVec = []
+            yVec = []
+        
+
 
     def labelLastChance(self,PLAN):
         startX = PLAN.start.x

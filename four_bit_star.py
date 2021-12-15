@@ -740,8 +740,12 @@ class BIT_STAR:
                     replan_t_end = time.time()
                     print("ending pruning process at ", replan_t_end - replan_t_start)
                     costFile.write("pruning process end, %s\n"%(replan_t_end - replan_t_start))
-                if mode == "prune":
 
+                if mode == "update":
+                    # we just want to update edge costs
+                    pass
+
+                if mode == "prune":
                     # we want to prune the motion tree and replan from there
                     # specifically, we want to prune subtrees in order from largest to smallest.
                     # collisionRoot is where we will start collision checking again
