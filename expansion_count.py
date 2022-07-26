@@ -1,11 +1,12 @@
-# trying to do LPA star on the samples
+# giving in
 import sys,os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import heapq
 import random
-import Visualizer #from numba import jit import time
+#from numba import jit
+
 import time
 
 import queue # for tree pruning
@@ -25,7 +26,7 @@ class State:
         self.hHat = inf
         self.gHat = inf
         self.fHat = inf 
-        self.inCollision = False
+        
 
 class Edge:
     def __init__(self):
@@ -33,8 +34,6 @@ class Edge:
         self.target_state = State()
         self.f = inf
         cHat = 0.0
-        self.inCollision = False 
-        self.edgeCost = inf
 
 
 class BIT_STAR:
@@ -68,10 +67,6 @@ class BIT_STAR:
         # the vertex and edges need to be dictionary
         self.V = {} 
         self.E = {}                                                     # A1.1
-
-        self.oldV = []
-        self.oldE = []
-
         self.Vold = {}
         self.Xsamples = {}
         self.Xnear = {}
@@ -85,8 +80,8 @@ class BIT_STAR:
         self.QvCount = 0
 
         # solution cost
-        self.c = inf
-        #self.c = 9999
+        #self.c = inf
+        self.c = 9999
 
         # DEBUG PARAMS
         # temporarily run the while loop
@@ -100,12 +95,8 @@ class BIT_STAR:
         self.cVector = []
         self.tmpWhileVector = []
         self.timeVector = []
-
-        #dynamic environment
-        self.environmentUpdated = False
-        self.SkipPruning = False
     
-    def readEnvironment(self, envFile, updated = False):
+    def readEnvironment(self, envFile):
         A = []
         f = open(envFile)
         for x in f:
@@ -124,34 +115,26 @@ class BIT_STAR:
                     self.obs[j][i] = 0
                 else:
                     self.obs[j][i] = 1
-        
-        if updated == False:
-            self.obs1 = self.obs
-            print("self.obs")
-            print(self.obs)
-            # our program has an 
-            self.start.x = float(A[2+self.yMax])
-            self.start.y = float(A[3+self.yMax])
-            self.goal.x = float(A[4+self.yMax])
-            self.goal.y = float(A[5+self.yMax])
+        print("self.obs")
+        print(self.obs)
+        self.start.x = float(A[2+self.yMax])
+        self.start.y = float(A[3+self.yMax])
+        self.goal.x = float(A[4+self.yMax])
+        self.goal.y = float(A[5+self.yMax])
 
-            print(self.start.x)
-            print(self.start.y)
-            print(self.goal.x)
-            print(self.goal.y)
-            self.start.gHat = 0
-            self.start.hHat = self.calcDist(self.start,self.goal)
-            self.start.fHat = self.start.gHat + self.start.hHat
+        print(self.start.x)
+        print(self.start.y)
+        print(self.goal.x)
+        print(self.goal.y)
+        self.start.gHat = 0
+        self.start.hHat = self.calcDist(self.start,self.goal)
+        self.start.fHat = self.start.gHat + self.start.hHat
 
-            self.goal.gHat = self.calcDist(self.start, self.goal)
-            self.goal.hHat = 0
-            self.goal.fHat = self.goal.gHat + self.goal.hHat
-            print("ENVIRONMENT READING fHat goal", self.start.fHat)
-            print("ENVIRONMENT READING fHat goal", self.goal.fHat)
-        else:
-            print("I SET SELF.OBS 2")
-            self.obs2 = self.obs
-
+        self.goal.gHat = self.calcDist(self.start, self.goal)
+        self.goal.hHat = 0
+        self.goal.fHat = self.goal.gHat + self.goal.hHat
+        print("ENVIRONMENT READING fHat goal", self.start.fHat)
+        print("ENVIRONMENT READING fHat goal", self.goal.fHat)
     def calculate_L2(self, x1, y1, x2, y2):
         return np.sqrt((x2-x1)**2 + (y2-y1)**2)
     
@@ -384,12 +367,95 @@ class BIT_STAR:
             a = heapq.heappop(XnearQueue)[1]
             self.Xnear[a] = a
         
+    def ExpandVertex(self):
+        print("queue in expand vertex")
+        #print(self.Qv)
+        print("Edge Queue length", len(self.Qe)) 
+        print("Vertex Queue length", len(self.Qe)) 
+
+        # we're interested in the State that we are searching on, not the value its sorted by really
+        print("self.Qv == ", self.Qv)
+        # when this line hits, sometimes theres not enough stuff in Qv
+        v0 = heapq.heappop(self.Qv)                                          # A2.1
+        v = v0[2]
+        print("v in ExpandVertex",v)
+        print("Does v.x " + str(v.x) + " v.y " + str(v.y) + "Belong to self.Vold", v in self.Vold)
+        print("Compare to self.r = ", self.r)
+
+        # i think we clear it each time
+        self.Xnear = {}
+        #print("self.Xsamples in ExpandVertex",self.Xsamples)
+        print("how many samples do we got? ", len(self.Xsamples))
+        for i in self.Xsamples:                                             # A2.2
+            if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
+                self.Xnear[i] = i 
+
+        # doing nearest neighbors
+        #print("self.Xnear", self.Xnear)
+        print("len Xnear contains " + str(len(self.Xnear)) + " elements")
+        for i in self.Xnear:
+            gHatV = self.calcDist(v, self.start)
+            cHat = self.calcDist(v,i)                                   # this number should be changing pers sample/
+            hHatX = self.calcDist(i, self.goal)
+            fHat = gHatV + cHat +hHatX
+            #print("goal Gt", self.goal.gT)
+            print("gHatV", gHatV)
+            print("cHat", cHat)
+            print("hHatX", hHatX)
+            #print("fHat", fHat)
+            if gHatV + cHat + hHatX < self.goal.gT:
+                edgeToAdd = Edge()
+                edgeToAdd.source_state = v
+                #i.gT = gHatV + cHat
+                edgeToAdd.target_state = i
+                edgeToAdd.cHat = cHat
+                edgeToAdd.f = gHatV + cHat + hHatX
+                print("edgeToAdd.f", edgeToAdd.f)
+                #print("pushing edge X case")
+                #print("edgeToAdd.f", edgeToAdd.f)
+                print("adding edge of V.x = " + str(v.x) + " V.y " + str(v.y) + " i.x "  + str(i.x) + " i.y " + str(i.y))
+                #print("Qe length", len(self.Qe))
+                #print("Qe", self.Qe)
+
+                heapq.heappush(self.Qe, (edgeToAdd.f, self.QeCount, edgeToAdd)) # A2.3
+                self.QeCount+=1
+
+        if v not in self.Vold:                                              # A2.4
+            print("in self.Vold section")
+            self.Vnear = {} 
+            for i in self.V:                                             # A2.2 "worked" with self.Vold
+                print("v.x " + str(v.x) + " v.y " + str(v.y))
+                print("i.x " + str(i.x) + " i.y " + str(i.y))
+                if self.calculate_L2(i.x, i.y, v.x, v.y) < self.r:  
+                    self.Vnear[i] = i 
+            for i in self.V:
+                gHatV = self.calcDist(v, self.start)
+                cHat = self.calcDist(v,i)
+                hHatX = self.calcDist(i, self.goal)
+                print("gHatV", gHatV)
+                print("cHat", cHat)
+                print("hHatX", hHatX)
+                estimatedCostIsBetter = gHatV + cHat + hHatX <self.goal.gT
+                estCostBetterGivenTree = v.gT + cHat < i.gT
+                
+                if estimatedCostIsBetter and estCostBetterGivenTree:
+                #if (gHatV + cHat + hHatX < self.goal.gT):
+                    edgeToAdd = Edge()
+                    edgeToAdd.source_state = v
+                    edgeToAdd.target_state = i
+                    edgeToAdd.cHat = cHat
+                    edgeToAdd.f = gHatV + cHat + hHatX
+                    self.QvCount+=1
+                    if edgeToAdd not in self.E:
+                        heapq.heappush(self.Qe, (edgeToAdd.f,self.QeCount, edgeToAdd))
+        print("self.c cost ", self.c)
+        print("EXPAND NEXT VERTEX FINISHED A SINGLE LOOP") 
+
     def ExpandVertex2(self):
         # nearest neighbors are guaranteed to get put onto the edge queue
         self.dbgEV2X = 0
         self.dbgEV2V = 0
         self.dbgVVold = False
-
         v0 = heapq.heappop(self.Qv)                                          # A2.1
         v = v0[2]
         
@@ -494,7 +560,7 @@ class BIT_STAR:
                 nearestTreeCounter+=1
                 ##print("in loop nearestTreeCounter", nearestTreeCounter)
 
-    def BIT_STAR_MAIN(self, startTime, stopTime, mode = "replan") :
+    def BIT_STAR_MAIN(self, startTime, stopTime):
         self.V[self.start] = self.start                                     # A1.1
         self.Xsamples[self.goal] = self.goal                                # A1.1
                                                                             # A1.2 is in the __init__ part 
@@ -502,23 +568,20 @@ class BIT_STAR:
         while time.time() < stopTime:
         #while True:
             # i think each iteration of this we dump the motion tree
-            #print("LINE A1.4 CHECK")
+            ##print("LINE A1.4 CHECK")
             #print("Qe Size" + str(len(self.Qe)) + "Qv Size" + str(len(self.Qv)))
 
             # THIS IS A HACK NOT PART OF THE ALGORITHM
             #if (len(self.Xsamples) == 0):
             #    self.Sample()
             if (len(self.Qe) == 0 and len(self.Qv) == 0):                   # A1.4
-                #print("LINE A1.5")
+                ##print("LINE A1.5")
                 ##print("prune")                                              # A1.5 
-                
                 self.Prune()
 
-                #print("LINE A1.6")
-                self.Xsamples = self.Sample()                               # A1.6
+                #Xsamples = self.Sample()                                    # A1.6
+                self.Xsamples = self.Sample()
                 ##print("A1.6, length of Xsamples", len(self.Xsamples))
-
-                #print("LINE A1.7")
                 self.Vold = self.V.copy()                                          # A1.7
                 ##print("self.Vold == self.V", self.Vold == self.V)
 
@@ -550,8 +613,7 @@ class BIT_STAR:
             ##print("qe bqv", self.bestQueueValue(self.Qe))
 
             while self.bestQueueValue(self.Qv) <= self.bestQueueValue(self.Qe): # A1.10
-                #print("getting to expand next vertex")
-
+                ##print("getting to expand next vertex")
                 self.ExpandVertex2()                                         # A1.11
 
             #if len(self.Qe) > 0:
@@ -603,13 +665,10 @@ class BIT_STAR:
                 if collisionHappened == True:
                     ##print(" COLLISION IN OBSTALCE SET")
                     realCost = inf 
-                    currentEdge.edgeCost = realCost
-                    currentEdge.cHat = realCost
                 else:
                     ##print("NO COLLISION")
                     currentEdge.cHat = self.calcDist(currentEdge.source_state, currentEdge.target_state)
                     realCost = currentEdge.cHat                             
-                    currentEdge.edgeCost = realCost
                     self.dbgAttemptedEdgeList.append(currentEdge)
 
                 #realCost = currentEdge.cHat                             
@@ -667,10 +726,9 @@ class BIT_STAR:
                             tmpCost =  0
 
                             ##print("ENTERING COST TRAVERSAL")
-                            timeOut = 0 
-                            while edgeOfInterest.source_state != self.start and timeOut < 500:
+                            while edgeOfInterest.source_state != self.start:
                                 tmpCost += edgeOfInterest.cHat
-                                print("in COST TRAVERSAL tmp Cost", tmpCost)
+                                ##print("in COST TRAVERSAL tmp Cost", tmpCost)
                                 #if tmpCost > self.c:
                                 #    break
                                 # i dont want to iterate thru the whole tree just to find the edge target_state = edgeOfInterest.source_state  
@@ -679,13 +737,11 @@ class BIT_STAR:
                                     if edge.target_state == edgeOfInterest.source_state:
                                         edgeOfInterest = edge
                                         break
-                                timeOut+=1
                             tmpCost +=edgeOfInterest.cHat
 
                             ##print("FINAL tmpCost", tmpCost)
                             if tmpCost < self.c:
-                                self.oldE.append(self.E)
-                                self.oldV.append(self.V)
+
                                 # have to also attach the new cost to the goal state i think?
                                 self.c = tmpCost
                                 self.goal.gT = self.c
@@ -707,211 +763,136 @@ class BIT_STAR:
                         # this is a hack and not in the real algorithm
                         #if self.goal in self.V and self.start in self.V:
                         #    break
-                        # terminate if within 1% of the optimal solution
-                        #if self.c < 1.01*(self.calcDist(self.start, self.goal)):
-                        #    break
+                        # terminate if within 5% of the optimal solution
+                        if self.c < 1.01*(self.calcDist(self.start, self.goal)):
+                            break
             else:                                                               #A1.24
                 ##print("Failed check of #A1.14")
                 self.Qe = []                                                    #A1.25
                 self.Qv = []                                                    #A1.25
-
             ##print("SELF.tmpWhile", self.tmpWhile)
-            #print("time.time() - t_end", t_end - time.time())
-            if t_end - time.time() <=   test_length/2 and self.environmentUpdated == False:
-                replan_t_start = time.time()
-                # half way thru we will read in the B version of the environment
-                #ggv = Visualizer.Visualizer()
-                #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
-                self.readEnvironment(fileList[1], updated = True)
-                self.environmentUpdated = True
-                costFile.write("new environment detected at %s; mode = %s\n"%((t_end - time.time(), mode)))
-                # clear the motion tree
-                if mode == "replan":
-                    self.V = {}
-                    self.E = {}
-                    self.Xsamples = {} 
-
-                    # reset goal parameters
-                    self.goal.gT = inf
-                    costFile.write("goal pruned\n")
-                    self.c = inf
-
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
-                    # reset it to the initial conditions
-                    self.V[self.start] = self.start  
-                    self.Xsamples[self.goal] = self.goal
-                    self.Qe = []
-                    self.Qv = []
-                    # i think i have to move the goal.gT as well...
-                    replan_t_end = time.time()
-                    print("ending pruning process at ", replan_t_end - replan_t_start)
-                    costFile.write("pruning process end, %s\n"%(replan_t_end - replan_t_start))
-
-                if mode == "update":
-                    # we just want to update edge costs
-                    # to be called AFTER you load in second map
-                    print("UPDATING EDGE COSTS")
-                    self.changedEdges = []
-                    for E in self.E:
-                        tmpEdgeCost = E.edgeCost
-                        if self.collisionCheck(E.source_state, E.target_state) == 1:
-                            E.edgeCost = inf
-                        else:
-                            E.edgeCost = self.calcDist(E.source_state, E.target_state)
-                            E.cHat = E.edgeCost
-
-                        if E.edgeCost != tmpEdgeCost:
-                            self.changedEdges.append(E)
-
-                            ## i am going to try to enqueue the changed edges.....
-                            #gHatV = self.calcDist(E.source_state, self.start)
-                            #cHat = E.edgeCost
-                            #hHatX = self.calcDist(E.target_state, self.goal)
-                            #sortValue = gHatV + cHat + hHatX
-                            #self.QeCount+=1
-                            #heapq.heappush(self.Qe, (sortValue, self.QeCount, E))
-
-                    for changedEdge in self.changedEdges:
-                        vertex = changedEdge.source_state
-                        self.QvCount += 1
-                        sortValue = vertex.gT + vertex.hHat
-                        heapq.heappush(self.Qv, (sortValue, self.QvCount, vertex))  
-
-
-
-                    # legit guessing stuff
-
-                    self.goal.gT = inf
-                    costFile.write("goal pruned\n")
-                    self.c = inf
-                    print("number of self.changedEdges", len(self.changedEdges))
-                    print("FINISHED UPDATED EDGE COSTS")
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
-
-                if mode == "prune":
-                    # we want to prune the motion tree and replan from there
-                    # specifically, we want to prune subtrees in order from largest to smallest.
-                    # collisionRoot is where we will start collision checking again
-                    prune_t_start = time.time()
-                    print("STARTING TO PRUNE MOTION TREE", prune_t_start)
-                    collisionRoot = self.start
-                    collisionQueue = queue.Queue()
-                    collisionQueue.put(collisionRoot)
-                    self.collisionEdgesToPop = []
-                    subtreeCount = 0
-
-                    # i can do this in ONE BFS 
-                    while not collisionQueue.empty():
-                        stateToCheck = collisionQueue.get()
-                        for edge in list(self.E):
-                            if edge.source_state == stateToCheck:
-                                # 1st case, check if the parent was in collision
-                                if edge.source_state.inCollision == False:
-                                    #print("FIRST CASE")
-                                    edge.source_state.inCollision = bool(self.collisionCheck(edge.source_state, edge.target_state))
-                                    #print("results of checking the source state for collision", edge.source_state.inCollision)
-                                    if edge.source_state.inCollision == True:
-                                        edge.target_state.inCollision = True
-                                        #edge.source_state.gT = inf
-                                        edge.target_state.gT = inf
-                                        if edge.target_state == self.goal:
-                                            print("self.c = inf")
-                                            #self.goal.gT = inf
-                                            self.c = inf
-                                            costFile.write("goal pruned\n")
-                                        self.collisionEdgesToPop.append(edge)
-                                else:
-                                    #print("SECOND CASE")
-                                    edge.target_state.inCollision = True
-                                    edge.target_state.gT = inf
-                                    if edge.target_state == self.goal:
-                                        self.c = inf
-                                        costFile.write("goal pruned\n")
-                                    self.collisionEdgesToPop.append(edge)
-                                # if the parent vertex was not in collision, then collision check the edge
-                                collisionQueue.put(edge.target_state)
-
-                    for e in self.collisionEdgesToPop:# + pruneTheseEdges:
-                        if e in self.E:
-                            self.E.pop(e)
-                        if e.source_state in self.V:
-                            self.V.pop(e.source_state)
-                        if e.target_state in self.V:
-                            self.V.pop(e.target_state)
-                    #    for keyStatePair in self.Qe:
-                    #        if keyStatePair[2] == e:
-                    #            self.Qe.remove(keyStatePair)
-                        for keyStatePair in self.Qv:
-                            if keyStatePair[2] == e.source_state:
-                                self.Qv.remove(keyStatePair)
-                            if keyStatePair[2] == e.target_state:
-                                self.Qv.remove(keyStatePair)
-
-                    #print("len self.V", len(self.V))
-                    #print("len self.E", len(self.E))
-                    # i need to plot the motion tree right now. 
-
-                    # NO WE DONT JUST ERASE THIS THING
-                    self.Qe = []
-                    #self.Qv = []
-                    self.Xsamples = {}
-                    self.Xsamples = self.Sample()
-                    self.V[self.start] = self.start  
-                    self.Xsamples[self.goal] = self.goal
-                    #print("i need to make this fast but the idea is decent")    
-                    prune_t_end = time.time()
-                    print("ending pruning process at ", prune_t_end - prune_t_start)
-                    costFile.write("pruning process end, %s\n"%(prune_t_end - prune_t_start))
-                    
-                    # we need to visualize this thing AFTER we do the pruning
-                    #ggv = Visualizer.Visualizer()
-                    #ggv.plotMotionTree(self.V, self.E, self.obs, self.xMax, self.yMax, self.Xsamples, self.start, self.goal, self.oldE)
-            
-            #print("broke out") 
         return self.V, self.E 
+
+class Visualizer:
+    def __init__(self):
+        print("Visualizer")
+
+    def plotMotionTree(self,V,E,obsMap,xMax, yMax, samples, start, goal):
+        fig, ax = plt.subplots()
+        print("Plotting the Motion Tree")
+        startX = start.x
+        startY = start.y
+        goalX = goal.x
+        goalY = goal.y
+        plt.plot(startX,startY, "go", markersize=10)
+        plt.plot(goalX,goalY, "ro", markersize=10)
+        xVec = []
+        yVec = []
+        for edge in E:
+            xVec.append(edge.source_state.x)
+            xVec.append(edge.target_state.x)
+            yVec.append(edge.source_state.y)
+            yVec.append(edge.target_state.y)
+            #ax.plot(xVec, yVec, "r-x")
+            ax.plot(xVec, yVec, "-", color="#FFA71A")
+            #ax.plot(xVec,yVec, "r")
+            xVec = []
+            yVec = []
+        #rect = patches.Rectangle( (50, 100), 10, 10, linewidth=1, edgecolor="r", facecolor = "r")
+        #ax.add_patch(rect)
+
+        xSolution = []
+        ySolution = []
+        # find goal
+        
+        xSampleVector = []
+        ySampleVector = []
+        for state in samples:
+            xSampleVector.append(state.x)
+            ySampleVector.append(state.y)
+        plt.plot(xSampleVector,ySampleVector, "o", color = "#757575", markersize=0.75)
+
+        # plotting the obstacles
+        countY = 0
+        for i in obsMap:
+            countX = 0
+            for j in i:
+                if j == 1:
+                    rect = patches.Rectangle((np.floor(countX),np.floor(yMax - countY-1)), 1,1, linewidth=1, edgecolor="k",facecolor="k")
+                    ax.add_patch(rect) 
+                countX+=1
+            countY +=1
+        plt.plot(startX,startY, "go", markersize=10)
+        plt.plot(goalX,goalY, "ro", markersize=10)
+        xVecSolu = []
+        yVecSolu = []
+        
+        foundGoal = False
+        stateOfInterest = goal
+        while stateOfInterest != start:
+            for e in E:
+                if e.target_state == stateOfInterest:
+                    foundGoal = True
+                    xVecSolu.append(e.source_state.x)
+                    yVecSolu.append(e.source_state.y)
+                    xVecSolu.append(e.target_state.x)
+                    yVecSolu.append(e.target_state.y)
+                    stateOfInterest = e.source_state
+                    plt.plot(xVecSolu, yVecSolu, color="#007FFF", linewidth=3)
+                    xVecSolu = []
+                    yVecSolu = []
+            if foundGoal == False:
+                break
+                         
+
+                    
+        plt.xlim((0,xMax))
+        plt.ylim((0,yMax))
+        plt.axis("equal")
+        plt.title("Motion Tree, Samples, and Solution Path")
+        plt.xlabel("Distance (m)")
+        plt.ylabel("Distance (m)")
+        plt.show()
+
+    def plotAttemptedEdge(self, attemptedEdges, obsMap, yMax):
+        print("plotting attempted edges")
+        print("attemptedEdges", attemptedEdges)
+        fig, ax = plt.subplots()
+        xVec = []
+        yVec = []
+        for edge in attemptedEdges:
+            xVec.append(edge.source_state.x)
+            xVec.append(edge.target_state.x)
+            yVec.append(edge.source_state.y)
+            yVec.append(edge.target_state.y)
+        ax.plot(xVec, yVec)
+        countY = 0
+        for i in obsMap:
+            countX = 0
+            for j in i:
+                if j == 1:
+                    rect = patches.Rectangle((np.floor(countX),np.floor(yMax - countY-1)), 1,1, linewidth=1, edgecolor="r",facecolor="r")
+                    ax.add_patch(rect) 
+                countX+=1
+            countY +=1
+
+        # too lazy
+        plt.xlim((0,50))
+        plt.ylim((0,50))
+        plt.show()
 
 if __name__ == "__main__":
     #vertices = open("vertices.txt","w")
-    costFile = open("costs%s.csv"%time.time(), "w")
+    costFile = open("costs.csv", "w")
+    expansionsFile = open("expansions.csv", "a")
+    #expansionsFile.write("QeCount, QvCount\n")
 
     # for debugging, but i'm pretty sure randomness can cause issues
-    #random.seed(6)
+    #random.seed(69)
     # input stuff
     #
     BS = BIT_STAR()
-
-    # for changing environments
-    #fileList = ["test_environments/grid_envs_changing10/environment10_B_5.txt", "test_environments/grid_envs_changing10/environment10_A_5.txt"]
-    fileList = ["test_environments/grid_envs_changing10/environment10_A_5.txt", "test_environments/grid_envs_changing10/environment10_B_5.txt"]
-
-    # instance 7 is interesting
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_7.txt", "test_environments/grid_envs_changing/environment50_A_7.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_7.txt", "test_environments/grid_envs_changing/environment50_B_7.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_19.txt", "test_environments/grid_envs_changing/environment50_A_19.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_99.txt", "test_environments/grid_envs_changing/environment50_A_99.txt"]
-
-    # 
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_77.txt", "test_environments/grid_envs_changing/environment50_A_77.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_77.txt", "test_environments/grid_envs_changing/environment50_B_77.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_90.txt", "test_environments/grid_envs_changing/environment50_B_87.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_A_6.txt", "test_environments/grid_envs_changing/environment50_B_6.txt"]
-    #fileList = ["test_environments/grid_envs_changing1000/environment1000_A_6.txt", "test_environments/grid_envs_changing1000/environment1000_B_6.txt"]
-    #fileList = ["test_environments/grid_envs_changing500/environment500_A_55.txt", "test_environments/grid_envs_changing500/environment500_B_55.txt"]
-    #fileList = ["test_environments/grid_envs_changing500/environment500_A_55.txt", "test_environments/grid_envs_changing500/environment500_B_55.txt"]
-    #fileList = ["test_environments/grid_envs_changing/environment50_B_54.txt", "test_environments/grid_envs_changing/environment50_A_54.txt"]
-    #fileList = ["test_environments/grid_envs_changing/shortcutA.txt", "test_environments/grid_envs_changing/shortcutB.txt"]
-    #fileList = ["test_environments/grid_envs_changing/shortcutB.txt", "test_environments/grid_envs_changing/shortcutA.txt"]
-    #fileList = ["test_environments/grid_envs_changing/shortcut1A.txt", "test_environments/grid_envs_changing/shortcut1B.txt"]
-    #fileList = ["test_environments/grid_envs_changing/shortcut1B.txt", "test_environments/grid_envs_changing/shortcut1A.txt"]
-
-
-
-
-
-    BS.readEnvironment(fileList[0], False)
-    #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment104.txt")
@@ -924,29 +905,28 @@ if __name__ == "__main__":
     #print("asdfadsf")
 
     #from timeit import Timer
-    # most testing in 20 seconds
-    test_length = 20 
+    test_length = 100 
     t_start = time.time()
     t_end = time.time() + test_length
-    V,E = BS.BIT_STAR_MAIN(t_start, t_end, "update")
+    V,E = BS.BIT_STAR_MAIN(t_start, t_end)
     #t.timeit()
 
 
     ##output stuff
-    #print("VERTICES")
-    ##print(V)
-    #print(len(V))
+    print("VERTICES")
+    print(V)
+    print(len(V))
 
-    #print("EDGES")
-    #print(E)
-    #print(len(E))
+    print("EDGES")
+    print(E)
+    print(len(E))
     print(BS.obs)
-    #for i in V:
-    #    print("x", i.x)
-    #    print("y", i.y)
+    for i in V:
+        print("x", i.x)
+        print("y", i.y)
 
-    gv = Visualizer.Visualizer()
-    gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal, BS.oldE)
+    #gv = Visualizer()
+    #gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal)
     #gv.plotAttemptedEdge(BS.dbgAttemptedEdgeList, BS.obs, BS.yMax)
 
     #print(BS.tmpWhileVector)
@@ -963,3 +943,6 @@ if __name__ == "__main__":
         costFile.write(str(BS.timeVector[item]) + "," + str(BS.cVector[item]))
         costFile.write("\n")
     costFile.close()
+
+    expansionsFile.write("%s,%s\n"%( BS.QeCount, BS.QvCount))
+    expansionsFile.close()

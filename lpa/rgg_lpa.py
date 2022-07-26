@@ -562,8 +562,8 @@ if __name__ == "__main__":
     #fileList = ["../test_environments/grid_envs_changing/environment50_A_39.txt","../test_environments/grid_envs_changing/environment50_B_39.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_39.txt","../test_environments/grid_envs_changing/environment50_A_39.txt"]
     #fileList = ["../test_environments/grid_envs_changing/environment50_B_62.txt","../test_environments/grid_envs_changing/environment50_A_62.txt"]
-    #fileList = ["../test_environments/grid_envs_changing/environment50_B_51.txt","../test_environments/grid_envs_changing/environment50_A_51.txt"]
-    fileList = ["../test_environments/grid_envs_changing/environment50_B_72.txt","../test_environments/grid_envs_changing/environment50_A_72.txt"]
+    fileList = ["../test_environments/grid_envs_changing/environment50_B_51.txt","../test_environments/grid_envs_changing/environment50_A_51.txt"]
+    #fileList = ["../test_environments/grid_envs_changing/environment50_B_72.txt","../test_environments/grid_envs_changing/environment50_A_72.txt"]
     
     #fileList = ["snake_A.txt", "snake_B.txt"]
     #fileList = ["snake_B.txt", "snake_A.txt"]

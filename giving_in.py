@@ -827,6 +827,10 @@ class Visualizer:
         plt.plot(goalX,goalY, "ro", markersize=10)
         xVecSolu = []
         yVecSolu = []
+
+        qcWaypoints = []
+        qcWaypoints.append((goalX, goalY))
+        print((goalX,goalY))
         
         foundGoal = False
         stateOfInterest = goal
@@ -840,10 +844,25 @@ class Visualizer:
                     yVecSolu.append(e.target_state.y)
                     stateOfInterest = e.source_state
                     plt.plot(xVecSolu, yVecSolu, color="#007FFF", linewidth=3)
+                    #print(xVecSolu, yVecSolu)
+                    print("(%s,%s), (%s,%s)"%(e.source_state.x, e.source_state.y, e.target_state.x, e.target_state.y))
+                    if ( (e.source_state.x, e.source_state.y) not in qcWaypoints):
+                        qcWaypoints.append( (e.source_state.x, e.source_state.y) )
+                    if ( (e.target_state.x, e.target_state.y) not in qcWaypoints):
+                        qcWaypoints.append( (e.target_state.x, e.target_state.y) )
                     xVecSolu = []
                     yVecSolu = []
             if foundGoal == False:
                 break
+        print("QUADCOPTER WAYPOINTS")
+        qcWaypoints.reverse()
+        print(qcWaypoints)
+        waypointsFile = open("waypoints.csv", "w")
+        waypointsFile.write("x,y\n")
+        for waypoint in qcWaypoints:
+            waypointsFile.write("%s,%s\n"%(waypoint[0], waypoint[1]))
+        waypointsFile.close()
+        
                          
 
                     
@@ -885,16 +904,16 @@ class Visualizer:
 if __name__ == "__main__":
     #vertices = open("vertices.txt","w")
     costFile = open("costs.csv", "w")
-
+    
     # for debugging, but i'm pretty sure randomness can cause issues
-    #random.seed(69)
+    random.seed(6)
     # input stuff
     #
     BS = BIT_STAR()
-    BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
+    #BS.readEnvironment("test_environments/grid_envs50/environment50_3.txt")
     #BS.readEnvironment("test_environments/grid_envs1000/environment1000_3.txt")
     #BS.readEnvironment("test_environments/grid_envs/environment69.txt")
-    #BS.readEnvironment("test_environments/grid_envs/environment104.txt")
+    BS.readEnvironment("test_environments/grid_envs/environment104.txt")
     # env 90 caused an out of bounds error on collision checking. might be hard to track down
     #BS.readEnvironment("test_environments/grid_envs/environment699.txt")
     #BS.readEnvironment("snake.txt")
@@ -923,6 +942,7 @@ if __name__ == "__main__":
     for i in V:
         print("x", i.x)
         print("y", i.y)
+    print("PLOTTED WAYPOINTS")
 
     gv = Visualizer()
     gv.plotMotionTree(V,E,BS.obs,BS.xMax, BS.yMax,BS.Xsamples,BS.start, BS.goal)

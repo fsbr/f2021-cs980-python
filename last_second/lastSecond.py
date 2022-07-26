@@ -50,11 +50,11 @@ class LAST:
         # map stuff
         self.obs = np.array([]) 
         # stuff for sampling
-        self.m = 100
+        self.m = 1000
         self.Xsamples = {}
 
         # rgg stuff
-        self.r = 2.0 
+        self.r = 10.0 
         self.V = {}
         self.E = {}
 
@@ -461,37 +461,42 @@ if __name__ == "__main__":
     #fileList = ["../test_environments/grid_envs_changing10/environment10_B_10.txt", "../test_environments/grid_envs_changing10/environment10_A_10.txt"]
     #fileList = ["../test_environments/grid_envs_changing10/environment10_A_11.txt", "../test_environments/grid_envs_changing10/environment10_B_11.txt"]
     #fileList = ["../test_environments/grid_envs_changing10/environment10_B_11.txt", "../test_environments/grid_envs_changing10/environment10_A_11.txt"]
-    #fileList = ["../test_environments/grid_envs_changing10/environment10_A_69.txt", "../test_environments/grid_envs_changing10/environment10_B_69.txt"]
-    fileList = ["../test_environments/grid_envs_changing10/environment10_B_69.txt", "../test_environments/grid_envs_changing10/environment10_A_69.txt"]
+    fileList = ["../test_environments/grid_envs_changing10/environment10_A_69.txt", "../test_environments/grid_envs_changing10/environment10_B_69.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_B_69.txt", "../test_environments/grid_envs_changing10/environment10_A_69.txt"]
+    #fileList = ["../test_environments/grid_envs_changing10/environment10_A_42.txt", "../test_environments/grid_envs_changing10/environment10_B_42.txt"]
+    fileList = ["../test_environments/grid_envs_changing/environment50_A_3.txt", "../test_environments/grid_envs_changing/environment50_A_3.txt"]
     print("LAST CHANCE")
     L = LAST()
 
     L.readEnvironment(fileList[0], False)
-    solution1, solution2, changedEdges, tcsp1, tcsp2 = L.Main()
+    #solution1, solution2, changedEdges, tcsp1, tcsp2 = L.Main()
     solution1X = []
     solution1Y = []
-    for state in solution1:
-        #print("statex, statey", state.x, state.y)
-        solution1X.append(state.x)
-        solution1Y.append(state.y)
-    
-    solution2X = []
-    solution2Y = []
-    for state in solution2:
-        #print("statex, statey", state.x, state.y)
-        solution2X.append(state.x)
-        solution2Y.append(state.y)
+    #for state in solution1:
+    #    #print("statex, statey", state.x, state.y)
+    #    solution1X.append(state.x)
+    #    solution1Y.append(state.y)
+    #
+    #solution2X = []
+    #solution2Y = []
+    #for state in solution2:
+    #    #print("statex, statey", state.x, state.y)
+    #    solution2X.append(state.x)
+    #    solution2Y.append(state.y)
 
 
-    print("time for each results")
-    print("tcsp1 = %s\n"%tcsp1)
-    print("tcsp2 = %s\n"%tcsp2)
+    #print("time for each results")
+    #print("tcsp1 = %s\n"%tcsp1)
+    #print("tcsp2 = %s\n"%tcsp2)
     gv = Visualizer.Visualizer()
-    gv.plotEdges(L)
+    #gv.plotEdges(L)
     gv.plotEnv(L)
-    #gv.plotSolutionEdges(solution1)
-    gv.lcPlotSolution(solution1X, solution1Y, "#420690", 5)
-    gv.lcPlotSolution(solution2X, solution2Y, "#007fff", 3)
-    gv.plotSamples(L) 
-    gv.labelLastChance(L)
+    ##gv.plotSolutionEdges(solution1)
+    #gv.lcPlotSolution(solution1X, solution1Y, "#420690", 5)
+    #gv.lcPlotSolution(solution2X, solution2Y, "#007fff", 3)
+    #gv.plotSamples(L) 
+    #gv.labelLastChance(L)
+
+    # generating figure for the paper, comment out later
+    gv.labelLastChance2(L)
 

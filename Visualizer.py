@@ -192,3 +192,15 @@ class Visualizer:
         self.ax.set_title("Explicit RGG")
         self.ax.axis("equal")
         plt.show()
+    def labelLastChance2(self,PLAN):
+        startX = PLAN.start.x
+        startY = PLAN.start.y
+        goalX = PLAN.goal.x
+        goalY = PLAN.goal.y
+        self.ax.plot(startX,startY, "go", markersize=10)
+        self.ax.plot(goalX,goalY, "ro", markersize=10)
+        self.ax.set_xlabel("x (m)")
+        self.ax.set_ylabel("y (m)")
+        self.ax.set_title("Test Environment")
+        self.ax.axis("equal")
+        plt.show()

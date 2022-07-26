@@ -1,5 +1,5 @@
 #run this thing a lot of time
 uniqueIterator = 0
 while uniqueIterator < 9:
-    exec(open("three_bit_star.py").read())
+    exec(open("expansion_count.py").read())
     uniqueIterator +=1
